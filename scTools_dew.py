@@ -1,13 +1,11 @@
 
 import pickle
-import numpy as np
 import os
 import scipy.sparse
-from scipy import optimize
+import numpy as np
 import pandas as pd
 import scanpy.api as sc
 import matplotlib.pyplot as plt
-
 
 
 ########## GENERIC
@@ -178,26 +176,7 @@ def filter_abundant_barcodes(adata):
 
 ########## GENE OSCILLATIONS
 
-def test_oscillation(x_data, y_data):
 
-    # Plot raw data
-    plt.figure(figsize=(6, 4))
-    plt.scatter(x_data, y_data)
-
-    # Fit a sine function
-    def test_func(x, a, b):
-        return a * np.sin(b * x)
-    params, params_covariance = optimize.curve_fit(test_func, x_data, y_data, p0=[2, 2])
-    print(params)
-
-
-    # Plot curve
-    plt.figure(figsize=(6, 4))
-    plt.scatter(x_data, y_data, label='Data')
-    plt.plot(x_data, test_func(x_data, params[0], params[1]),
-             label='Fitted function')
-    plt.legend(loc='best')
-    plt.show()
 
 
 ########## CELL NORMALIZATION
