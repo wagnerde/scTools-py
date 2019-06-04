@@ -8,7 +8,6 @@ import scanpy.api as sc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-# GENERIC
 # LOADING DATA
 
 def load_inDrops_V3(library_names, input_path):
@@ -145,7 +144,7 @@ def load_celldata(adata, csv_filename, filter_nomatch=False):
 
 # DATA PRE-PROCESSING
 
-def filter_abundant_barcodes(adata, filter_cells=True, save_path='plots/barcode_histograms/'):
+def filter_abundant_barcodes(adata, filter_cells=True, save_path='./figures/'):
     '''
     Plots a weighted histogram of transcripts per cell barcode for guiding the
     placement of a filtering threshold. Returns a filtered version of adata.  
@@ -174,7 +173,7 @@ def filter_abundant_barcodes(adata, filter_cells=True, save_path='plots/barcode_
 
     # Save figure to file
     fig.tight_layout()
-    plt.savefig(save_path + library_name + '_barcode_hist.pdf')
+    plt.savefig(save_path + 'barcode_hist_' + library_name + '.png')
     plt.show()
     plt.close()
 
@@ -188,7 +187,7 @@ def filter_abundant_barcodes(adata, filter_cells=True, save_path='plots/barcode_
     if filter_cells:
         sc.pp.filter_cells(adata, min_counts=threshold, inplace=True)
 
-    return adata
+    return adata, fig, ax
 
 
 # VARIABLE GENES
@@ -276,9 +275,7 @@ def filter_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_c
     return gene_ix[ix]
 
 
-# CELL NORMALIZATION
-# DIMENSIONALITY REDUCTION
-# GEPHI  
+# GEPHI IMPORT & EXPORT
 
 def export_to_graphml(adata, filename='test.graphml', directed=None):    
     import igraph as ig
@@ -301,7 +298,6 @@ def export_to_graphml(adata, filename='test.graphml', directed=None):
                   'Your adjacency matrix contained redundant nodes.'
                   .format(g.vcount()))
     g.write_graphml(filename)
-    print(g)
 
 
 def import_pajek_xy(adata, filename='test.net'):
@@ -328,12 +324,12 @@ def import_pajek_xy(adata, filename='test.net'):
     return adata
 
 
-# FORCE LAYOUT
-
 # CLASSIFICATION
 
 def train_classifiers(X, labels, PCs, gene_ind):
     '''
+    Trains a series of machine learning classifiers to associate individual cells with class labels.
+    Does so in a low-dimensional PCA representation of the data (PCs) over pre-defined genes (gene_ind).
     '''
 
     # Import sklearn classifier packages
@@ -379,12 +375,12 @@ def train_classifiers(X, labels, PCs, gene_ind):
     
     # Export classifier dictionary and subspace projection objects
 
-    return {'Classifiers' : ClassifierDict,
+    return {'Classes' : np.unique(labels),
+            'Classifiers' : ClassifierDict,
     		'Classifier_Scores' : dict(zip(classifier_names, scores)), 
             'PC_Loadings' : PCs,
             'Gene_Ind' : gene_ind}
-
-    
+   
 
 def predict_classes(adata, Classifier):    
     '''
@@ -416,9 +412,11 @@ def predict_classes(adata, Classifier):
         X_ind = X[:,dataset_ind]
         X_PCA = np.matmul(X_ind,PCs_ind)
 
-    # Predict labels for each cell, store results in adata.obs
+    # Predict class labels and probabilities for each cell, store results in adata
     for n,name in enumerate(Classifier['Classifiers']):
         adata.obs['pr_'+name] = Classifier['Classifiers'][name].predict(X_PCA)
+        if hasattr(Classifier['Classifiers'][name], "predict_proba"): 
+            adata.obsm['proba_'+name] = Classifier['Classifiers'][name].predict_proba(X_PCA)
 
     return adata
 
@@ -429,7 +427,9 @@ def plot_confusion_matrix(labels_A, labels_B,
                           normalize=True,
                           title=None,
                           cmap=plt.cm.Blues,
-                          overlay_values=False):
+                          overlay_values=False,
+                          vmin=None,
+                          vmax=None):
     '''
     Plots a confusion matrix comparing two sets labels. 
 
@@ -474,7 +474,7 @@ def plot_confusion_matrix(labels_A, labels_B,
 
     # Generate and format figure axes
     fig, ax = plt.subplots()
-    im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
+    im = ax.imshow(cm, interpolation='nearest', cmap=cmap, vmin=vmin, vmax=vmax)
 
     ax.grid(False)
     ax.set(xticks=np.arange(cm.shape[1]),
@@ -504,42 +504,133 @@ def plot_confusion_matrix(labels_A, labels_B,
                         ha="center", va="center",
                         color="white" if cm[i, j] > thresh else "black",
                         size=8)
+    ax.set_aspect('equal') 
+    
+    return fig, ax
 
+# PCA
 
+def pca_heatmap(adata, component, use_raw=None, layer=None):
+    attr = 'varm'
+    keys = 'PCs'
+    scores = getattr(adata, attr)[keys][:, component]
+    dd = pd.DataFrame(scores, index=adata.var_names)
+    var_names_pos = dd.sort_values(0, ascending=False).index[:20]
+
+    var_names_neg = dd.sort_values(0, ascending=True).index[:20]
+
+    pd2 = pd.DataFrame(adata.obsm['X_pca'][:, component], index=adata.obs.index)
+
+    bottom_cells = pd2.sort_values(0).index[:300].tolist()
+    top_cells = pd2.sort_values(0, ascending=False).index[:300].tolist()
+
+    sc.pl.heatmap(adata[top_cells+bottom_cells], list(var_names_pos) + list(var_names_neg), 
+                        show_gene_labels=False,
+                        swap_axes=True, cmap='viridis', 
+                        use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
+                        
+
+# DIFFERENTIAL EXPRESSION
+
+def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05):
+
+    # Input an AnnData object that has already been subsetted to cells and genes of interest.
+    # Cells are ranked by dpt pseudotime. Genes are tested for significant differential expression 
+    # between two sliding windows corresponding the highest and lowest average expression. FDR values
+    # are then calculated by thresholding p-values calculated from randomized data.
+    # Returns a copy of adata with the following fields added: 
+    #   adata.var['dyn_peak_cell']: pseudotime-ordered cell with the highest mean expression
+    #   adata.var['dyn_fdr']: fdr-corrected p-value for differential expression
+    #   adata.var['dyn_fdr_flag']: boolean flag, true if fdr <= fdr_alpha
+
+    import scipy.stats
+
+    # Function for calculating p-values for each gene from min & max sliding window expression values
+    def get_slidingwind_pv(X, sliding_window):
+        # construct a series of sliding windows over the cells in X
+        wind=[]
+        nCells = X.shape[0]
+        for k in range(nCells-sliding_window+1):    
+            wind.append(list(range(k, k+sliding_window)))
+        # calculate p-values on the sliding windows
+        pv = []
+        max_cell_this_gene = []
+        nGenes = X.shape[1]
+        for j in range(nGenes):
+            tmp_X_avg = []
+            # get mean expression of gene j in each sliding window k
+            for k in range(len(wind)-1):    
+                tmp_X_avg.append(np.mean(X[wind[k],j]))
+            # determine min and max sliding windows for this gene
+            max_wind = np.argmax(tmp_X_avg)
+            min_wind = np.argmin(tmp_X_avg)
+            # determine if this gene displays significant differential expression
+            _,p=scipy.stats.ttest_ind(X[wind[max_wind],j],X[wind[min_wind],j])
+            pv.append(p[0])
+            max_cell_this_gene.append(max_wind)
+        return np.array(pv), np.array(max_cell_this_gene)
+
+    # import counts and pseudotime from the AnnData object
+    nCells = adata.shape[0]
+    nGenes = adata.shape[1]
+    cell_order = np.argsort(adata.obs['dpt_pseudotime'])
+    if scipy.sparse.issparse(adata.X):
+        X = adata.X[cell_order,:].todense()
+    else:
+        X = adata.X[cell_order,:]
+
+    # calculate p values on the pseudotime-ordered data
+    pv, peak_cell = get_slidingwind_pv(X, sliding_window)
+    adata.var['dyn_peak_cell'] = peak_cell#np.argsort(gene_ord)
+    print('done calculating p-values')
+    
+    # calculate p values on the randomized data
+    np.random.seed(802)
+    X_rand = X[np.random.permutation(cell_order),:]
+    pv_rand, _ = get_slidingwind_pv(X_rand, sliding_window)
+    print('done calculating randomized p-values')
+
+    # calculate fdr as the fraction of randomized p-values that exceed this p-value
+    fdr = []
+    fdr_flag = []
+    for j in range(nGenes):
+        fdr.append(sum(pv_rand <= pv[j])/nGenes)
+        fdr_flag.append(fdr[j] <= fdr_alpha)
+    adata.var['dyn_fdr'] = fdr
+    adata.var['dyn_fdr_flag'] = fdr_flag
+    print('done calculating fdr')
+
+    return adata
+
+    
 # PLOTTING
 
-def reverse_colormap(cmap, name = 'my_cmap_r'):
-    """
-    In: 
-    cmap, name 
-    Out:
-    my_cmap_r
+def format_axes(eq_aspect='all', rm_colorbar=False):
+    '''
+    Gets axes from the current figure and applies custom formatting options
+    In general, each parameter is a list of axis indices (e.g. [0,1,2]) that will be modified
+    Colorbar is assumed to be the last set of axes
+    '''
+    
+    # get axes from current figure
+    ax = plt.gcf().axes
 
-    Explanation:
-    t[0] goes from 0 to 1
-    row i:   x  y0  y1 -> t[0] t[1] t[2]
-                   /
-                  /
-    row i+1: x  y0  y1 -> t[n] t[1] t[2]
+    # format axes aspect ratio
+    if eq_aspect is not 'all':
+        for j in eq_aspect:
+            ax[j].set_aspect('equal') 
+    else:
+        for j in range(len(ax)):
+            ax[j].set_aspect('equal') 
 
-    so the inverse should do the same:
-    row i+1: x  y1  y0 -> 1-t[0] t[2] t[1]
-                   /
-                  /
-    row i:   x  y1  y0 -> 1-t[n] t[2] t[1]
-    """        
-    reverse = []
-    k = []   
+    # remove colorbar
+    if rm_colorbar:
+        j=len(ax)-1
+        if j>0:
+            ax[j].remove()
 
-    for key in cmap._segmentdata:    
-        k.append(key)
-        channel = cmap._segmentdata[key]
-        data = []
 
-        for t in channel:                    
-            data.append((1-t[0],t[2],t[1]))            
-        reverse.append(sorted(data))    
 
-    LinearL = dict(zip(k,reverse))
-    my_cmap_r = mpl.colors.LinearSegmentedColormap(name, LinearL) 
-    return my_cmap_r
+# FORCE LAYOUT
+# CELL NORMALIZATION
+# DIMENSIONALITY REDUCTION
