@@ -144,7 +144,7 @@ def load_celldata(adata, csv_filename, filter_nomatch=False):
 
 # DATA PRE-PROCESSING
 
-def filter_abundant_barcodes(adata, filter_cells=True, save_path='./figures/'):
+def filter_abundant_barcodes(adata, filter_cells=True, threshold=1000, library_name=None, save_path='./figures/'):
     '''
     Plots a weighted histogram of transcripts per cell barcode for guiding the
     placement of a filtering threshold. Returns a filtered version of adata.  
@@ -154,10 +154,9 @@ def filter_abundant_barcodes(adata, filter_cells=True, save_path='./figures/'):
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
 
-    # Load counts data etc from adata
-    counts = adata.obs['n_counts'].values
-    threshold = adata.uns['counts_thresh']
-    library_name = adata.uns['library_id']
+    # Sum total UMI counts for each cell barcode, save to obs
+    counts = adata.X.sum(1).A1
+    adata.obs['n_counts_pre_norm'] = counts
 
     # Plot and format a weighted counts histogram
     fig = plt.figure()
