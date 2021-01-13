@@ -53,8 +53,6 @@ def load_alevin(library_names, input_path):
 
     return D
 
-load_inDrops_V3 = load_inDrops # alias function name for backward compatibility
-
 
 def load_inDrops(library_names, input_path):
     '''
@@ -144,6 +142,9 @@ def load_inDrops(library_names, input_path):
         D[s].uns['library_id'] = s
 
     return D
+
+load_inDrops_V3 = load_inDrops # alias function name for backward compatibility
+
 
 def load_genedata(xxx):
     '''
