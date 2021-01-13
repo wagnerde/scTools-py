@@ -42,7 +42,7 @@ def load_alevin(library_names, input_path):
 
         # Compute basic cell sampling stats
         D[s]['adata'].obs['n_counts'] = D[s]['adata'].X.sum(1).A1
-        D[s]['adata'].obs['n_genes'] = [s]['adata'].X.astype(bool).sum(axis=1)
+        D[s]['adata'].obs['n_genes'] = D[s]['adata'].X.astype(bool).sum(axis=1)
 
         print(D)
 
