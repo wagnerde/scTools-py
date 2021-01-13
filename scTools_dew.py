@@ -43,7 +43,7 @@ def load_alevin(library_names, input_path):
 
         print(D)
 
-    Return D
+    return D
 
 
 def load_gene_names(xxx):
@@ -139,7 +139,7 @@ def load_inDrops(library_names, input_path):
         D[s]['adata'].obs['library_id'] = np.tile(s, [D[s]['adata'].n_obs, 1])
         D[s]['adata'].uns['library_id'] = s
 
-    Return D
+    return D
 
 
 def load_celldata(adata, csv_filename, filter_nomatch=False):
