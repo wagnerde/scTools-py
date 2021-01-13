@@ -31,15 +31,15 @@ def load_alevin(library_names, input_path):
     for s in library_names:
         
         # Load counts, gene names and cell barcodes into AnnData structure
-        D[s]['adata'] = sc.read_mtx(input_path + '/' + s + '/alevin/quants_mat.mtx.gz', dtype='float32')
-        D[s]['adata'].obs['unique_cell_id'] = np.loadtxt(input_path + '/' + s + '/alevin/quants_mat_rows.txt', dtype='str')
-        D[s]['adata'].var_names = np.loadtxt(input_path + '/' + s + '/alevin/quants_mat_cols.txt', dtype='str')
-        D[s]['adata'].obs['library_id'] = np.tile(s, [D[s]['adata'].n_obs, 1])
-        D[s]['adata'].uns['library_id'] = s
+        D[s] = sc.read_mtx(input_path + '/' + s + '/alevin/quants_mat.mtx.gz', dtype='float32')
+        D[s].obs['unique_cell_id'] = np.loadtxt(input_path + '/' + s + '/alevin/quants_mat_rows.txt', dtype='str')
+        D[s].var_names = np.loadtxt(input_path + '/' + s + '/alevin/quants_mat_cols.txt', dtype='str')
+        D[s].obs['library_id'] = np.tile(s, [D[s].n_obs, 1])
+        D[s].uns['library_id'] = s
 
         # Compute basic cell sampling stats
-        D[s]['adata'].obs['n_counts'] = D[s]['adata'].X.sum(1).A1
-        D[s]['adata'].obs['n_genes'] = D[s]['adata'].X.astype(bool).sum(axis=1)
+        D[s].obs['n_counts'] = D[s].X.sum(1).A1
+        D[s].obs['n_genes'] = D[s].X.astype(bool).sum(axis=1)
 
         print(D)
 
@@ -65,7 +65,7 @@ def load_inDrops(library_names, input_path):
     these objects (e.g. *.npz) will be saved in place for future calls to this function.
     
     The returned dictionary object D with a ScanPy AnnData object for each library loaded, as follows:
-    D[library_name].['adata']   
+    D[library_name] = AnnData object  
     Cell names and barcodes are stored in the adata.obs (cell barcodes as adata.obs['unique_cell_id'])
     Gene names are stored in adata.var
     Raw counts data are stored in adata.X
@@ -131,13 +131,13 @@ def load_inDrops(library_names, input_path):
         print(E.shape, '\n')
 
         # Convert to ScanPy AnnData objects
-        D[s]['adata'] = sc.AnnData(E)
-        D[s]['adata'].obs['n_counts'] = D[s]['adata'].X.sum(1).A1
-        D[s]['adata'].var_names = gene_names
-        D[s]['adata'].obs['unique_cell_id'] = cell_bc_seqs
-        D[s]['adata'].obs['cell_names'] = cell_names
-        D[s]['adata'].obs['library_id'] = np.tile(s, [D[s]['adata'].n_obs, 1])
-        D[s]['adata'].uns['library_id'] = s
+        D[s] = sc.AnnData(E)
+        D[s].obs['n_counts'] = D[s].X.sum(1).A1
+        D[s].var_names = gene_names
+        D[s].obs['unique_cell_id'] = cell_bc_seqs
+        D[s].obs['cell_names'] = cell_names
+        D[s].obs['library_id'] = np.tile(s, [D[s].n_obs, 1])
+        D[s].uns['library_id'] = s
 
     return D
 
