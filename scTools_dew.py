@@ -183,7 +183,6 @@ def load_celldata(adata, csv_filename, filter_nomatch=False):
     # make a dictionary of unique cell IDs and annotations from the CSV file
     loadtxt = np.loadtxt(csv_filename, dtype='str', delimiter=',', skiprows=1)
     annotation_dict = {}
-    print(loadtxt)
     for uID, *annots in loadtxt:   # column1 = uID, all remaining columns are annotations
         uID=uID.replace('-','')
         annotation_dict[uID] = annots
