@@ -4,7 +4,7 @@ import os
 import scipy.sparse
 import numpy as np
 import pandas as pd
-import scanpy.api as sc
+import scanpy as sc
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
