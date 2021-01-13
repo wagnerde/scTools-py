@@ -30,14 +30,22 @@ def load_alevin(library_names, input_path):
     # Load counts data, metadata, & convert to AnnData objects
     for s in library_names:
         
-        # Load counts, gene names and cell barcodes into AnnData structure
+        # Load counts, gene names into AnnData structure
         D[s] = sc.read_mtx(input_path + '/' + s + '/alevin/quants_mat.mtx.gz', dtype='float32')
-        D[s].obs['unique_cell_id'] = np.loadtxt(input_path + '/' + s + '/alevin/quants_mat_rows.txt', dtype='str')
         D[s].var_names = np.loadtxt(input_path + '/' + s + '/alevin/quants_mat_cols.txt', dtype='str')
         D[s].obs['library_id'] = np.tile(s, [D[s].n_obs, 1])
         D[s].uns['library_id'] = s
 
-        # Compute basic cell sampling stats
+        # Load cell barcodes into AnnData structure
+        cell_bcds = np.loadtxt(input_path + '/' + s + '/alevin/quants_mat_rows.txt', dtype='str')
+        
+        # Append library name to each cell barcode to create unique cell IDs
+        lib_cell_bcds = []
+        for bcd in cell_bcds:
+            lib_cell_bcds.append(s + '_' + bcd)
+        D[s].obs['unique_cell_id'] = lib_cell_bcds
+
+        # Compute total counts & number of genes per cell
         D[s].obs['n_counts'] = D[s].X.sum(1).A1
         D[s].obs['n_genes'] = D[s].X.astype(bool).sum(axis=1)
 
@@ -45,11 +53,7 @@ def load_alevin(library_names, input_path):
 
     return D
 
-
-def load_gene_names(xxx):
-    '''
-    '''
-
+load_inDrops_V3 = load_inDrops # alias function name for backward compatibility
 
 
 def load_inDrops(library_names, input_path):
@@ -141,6 +145,11 @@ def load_inDrops(library_names, input_path):
 
     return D
 
+def load_genedata(xxx):
+    '''
+    '''
+
+
 
 def load_celldata(adata, csv_filename, filter_nomatch=False):
     '''
@@ -195,6 +204,8 @@ def load_celldata(adata, csv_filename, filter_nomatch=False):
         adata = adata[adata.obs[annotation_names[j]] != 'no match', :]
 
     return adata
+
+
 
 
 # DATA PRE-PROCESSING
