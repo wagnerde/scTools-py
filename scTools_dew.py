@@ -34,9 +34,9 @@ def load_alevin(library_names, input_path):
 
 
         # Load counts, gene names and cell barcodes into AnnData structure
-        D[s]['adata'] = sc.read_mtx(input_path + library_name + '/alevin/quants_mat.mtx.gz', dtype='float32')
-        D[s]['adata'].obs['unique_cell_id'] = np.loadtxt(input_path + library_name + '/alevin/quants_mat_rows.txt', dtype='str')
-        D[s]['adata'].var_names = np.loadtxt(input_path + library_name + '/alevin/quants_mat_cols.txt', dtype='str')
+        D[s]['adata'] = sc.read_mtx(input_path + s + '/alevin/quants_mat.mtx.gz', dtype='float32')
+        D[s]['adata'].obs['unique_cell_id'] = np.loadtxt(input_path + s + '/alevin/quants_mat_rows.txt', dtype='str')
+        D[s]['adata'].var_names = np.loadtxt(input_path + s + '/alevin/quants_mat_cols.txt', dtype='str')
         D[s]['adata'].obs['library_id'] = np.tile(s, [D[s]['adata'].n_obs, 1])
         D[s]['adata'].uns['library_id'] = s
 
