@@ -29,10 +29,7 @@ def load_alevin(library_names, input_path):
 
     # Load counts data, metadata, & convert to AnnData objects
     for s in library_names:
-        print('_________________', s)
         
-
-
         # Load counts, gene names and cell barcodes into AnnData structure
         D[s]['adata'] = sc.read_mtx(input_path + '/' + s + '/alevin/quants_mat.mtx.gz', dtype='float32')
         D[s]['adata'].obs['unique_cell_id'] = np.loadtxt(input_path + '/' + s + '/alevin/quants_mat_rows.txt', dtype='str')
@@ -45,6 +42,8 @@ def load_alevin(library_names, input_path):
         D[s]['adata'].obs['n_genes'] = D[s]['adata'].X.astype(bool).sum(axis=1)
 
         print(D)
+
+    Return D
 
 
 def load_gene_names(xxx):
@@ -139,6 +138,8 @@ def load_inDrops(library_names, input_path):
         D[s]['adata'].obs['cell_names'] = cell_names
         D[s]['adata'].obs['library_id'] = np.tile(s, [D[s]['adata'].n_obs, 1])
         D[s]['adata'].uns['library_id'] = s
+
+    Return D
 
 
 def load_celldata(adata, csv_filename, filter_nomatch=False):
