@@ -187,8 +187,6 @@ def load_celldata(adata, csv_filename, filter_nomatch=False):
     for uID, *annots in loadtxt:   # column1 = uID, all remaining columns are annotations
         uID=uID.replace('-','')
         annotation_dict[uID] = annots
-    print(uID)
-    print(annotation_dict[uID])
     
     # lookup each query in the dictionary, return matching annotations (or NaNs)
     annotations = []
