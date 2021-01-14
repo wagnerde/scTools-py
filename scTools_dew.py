@@ -210,10 +210,6 @@ def load_celldata(adata, csv_filename, filter_nomatch=False):
     return adata
 
 
-
-
-
-
 # DATA PRE-PROCESSING
 
 def filter_abundant_barcodes(adata, filter_cells=True, threshold=1000, library_name='', save_path='./figures/'):
