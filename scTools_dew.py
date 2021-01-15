@@ -252,7 +252,7 @@ def filter_abundant_barcodes(adata, filter_cells=True, threshold=1000, library_n
     if filter_cells:
         sc.pp.filter_cells(adata, min_counts=threshold, inplace=True)
 
-    return adata, fig, ax
+    return adata
 
 
 # VARIABLE GENES
