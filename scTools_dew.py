@@ -158,7 +158,7 @@ def load_genedata(adata, csv_filename):
     Column n: last cell annotation  
     Column headers in the CSV file (required) will become headers of new columns in adata.var  
 
-    Unique gene ids in adata that no not appear in the CSV file will maintain their original unique ID.
+    Unique gene ids in adata that do not appear in the CSV file will be populated with the original unique ID.
     '''
     # load the unique gene IDs from adata that will be matched to the csv file
     uID_query = adata.var_names
@@ -190,7 +190,7 @@ def load_genedata(adata, csv_filename):
 
     # now copy the matched annotations to adata
     for j in range(0, nAnnotations):
-        adata.obs[annotation_names[j]] = annotations[:, j]
+        adata.var[annotation_names[j]] = annotations[:, j]
 
     return adata
 
