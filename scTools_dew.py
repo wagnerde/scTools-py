@@ -345,6 +345,31 @@ def get_vscores(E, min_mean=0, nBins=50, fit_percentile=0.1, error_wt=1):
     return v_scores, CV_eff, CV_input, gene_ix, mu_gene, FF_gene, a, b
 
 
+def runningquantile(x, y, p, nBins):
+    """ calculate the quantile of y in bins of x """
+
+    ind = np.argsort(x)
+    x = x[ind]
+    y = y[ind]
+
+    dx = (x[-1] - x[0]) / nBins
+    xOut = np.linspace(x[0]+dx/2, x[-1]-dx/2, nBins)
+
+    yOut = np.zeros(xOut.shape)
+
+    for i in range(len(xOut)):
+        ind = np.nonzero((x >= xOut[i]-dx/2) & (x < xOut[i]+dx/2))[0]
+        if len(ind) > 0:
+            yOut[i] = np.percentile(y[ind], p)
+        else:
+            if i > 0:
+                yOut[i] = yOut[i-1]
+            else:
+                yOut[i] = np.nan
+
+    return xOut, yOut
+
+
 def filter_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_vscore_plot=False, sample_name=''):
     ''' 
     Filter genes by expression level and variability
