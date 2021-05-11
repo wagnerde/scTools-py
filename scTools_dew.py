@@ -369,7 +369,6 @@ def runningquantile(x, y, p, nBins):
 
     return xOut, yOut
 
-
 def filter_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_vscore_plot=False, sample_name=''):
     ''' 
     Filter genes by expression level and variability
@@ -396,15 +395,15 @@ def filter_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_c
         x_max = 2 * np.max(mu_gene)
         xTh = x_min * np.exp(np.log(x_max / x_min) * np.linspace(0, 1, 100))
         yTh = (1 + a) * (1 + b) + b * xTh
-        plt.figure(figsize=(8, 6))
+        plt.figure(figsize=(6, 6))
         plt.scatter(np.log10(mu_gene), np.log10(FF_gene),
-                    c=[.8, .8, .8], alpha=0.3, edgecolors='')
+                    c=np.array(['grey']), alpha=0.3, edgecolors=None, s=4)
         plt.scatter(np.log10(mu_gene)[ix], np.log10(FF_gene)[
-                    ix], c=[0, 0, 0], alpha=0.3, edgecolors='')
+                    ix], c=np.array(['black']), alpha=0.3, edgecolors=None, s=4)
         plt.plot(np.log10(xTh), np.log10(yTh))
         plt.title(sample_name)
-        plt.xlabel('log10(mean)')
-        plt.ylabel('log10(Fano factor)')
+        plt.xlabel('Mean Transcripts Per Cell (log10)')
+        plt.ylabel('Gene Fano Factor (log10)')
         plt.show()
 
     return gene_ix[ix]
