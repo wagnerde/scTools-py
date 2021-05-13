@@ -408,6 +408,37 @@ def filter_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_c
 
     return gene_ix[ix]
 
+def filter_covarying_genes(E, gene_ix, minimum_correlation=0.2, show_hist=False, sample_name=''):
+
+    import sklearn
+    import numpy as np 
+
+    # subset input matrix to gene_ix
+    E = E[:,gene_ix]
+    
+    # compute gene-gene correlation distance matrix (1-correlation)
+    #gene_correlation_matrix1 = sklearn.metrics.pairwise_distances(E.todense().T, metric='correlation',n_jobs=-1)
+    gene_correlation_matrix = 1-sparse_corr(E) # approx. 2X faster than sklearn
+  
+    # for each gene, get correlation to the nearest gene neighbor (ignoring self)
+    np.fill_diagonal(gene_correlation_matrix, np.inf)
+    max_neighbor_corr = 1-gene_correlation_matrix.min(axis=1)
+  
+    # filter genes whose nearest neighbor correlation is above threshold 
+    ix_keep = np.array(max_neighbor_corr > minimum_correlation, dtype=bool).squeeze()
+  
+    # plot distribution of top gene-gene correlations
+    if show_hist:
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(6, 6))
+        plt.hist(max_neighbor_corr,bins=100)
+        plt.title(sample_name)
+        plt.xlabel('Nearest Gene Correlation')
+        plt.ylabel('Counts')
+        plt.show()
+  
+    return gene_ix[ix_keep]
+
 
 # GEPHI IMPORT & EXPORT
 
@@ -763,6 +794,17 @@ def format_axes(eq_aspect='all', rm_colorbar=False):
         if j>0:
             ax[j].remove()
 
+
+# SPARSE MATRICES
+
+def sparse_corr(A):
+        
+    N = A.shape[0]
+    C=((A.T*A -(sum(A).T*sum(A)/N))/(N-1)).todense()
+    V=np.sqrt(np.mat(np.diag(C)).T*np.mat(np.diag(C)))
+    COR = np.divide(C,V+1e-119)
+    
+    return COR
 
 
 # FORCE LAYOUT
