@@ -266,7 +266,7 @@ def filter_abundant_barcodes(adata, filter_cells=True, threshold=1000, library_n
         os.makedirs(save_path)
 
     # Sum total UMI counts for each cell barcode, save to obs
-    counts = adata.X.sum(1).A1
+    counts = adata.X.sum(1)
     adata.obs['n_counts_pre_norm'] = counts
 
     # Plot and format a weighted counts histogram
