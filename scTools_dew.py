@@ -255,7 +255,7 @@ def load_celldata(adata, csv_filename, filter_nomatch=False):
 
 # DATA PRE-PROCESSING
 
-def filter_abundant_barcodes(adata, filter_cells=True, threshold=1000, library_name='', save_path='./figures/'):
+def filter_abundant_barcodes(adata, filter_cells=True, logscale=True, threshold=1000, library_name='', save_path='./figures/'):
     '''
     Plots a weighted histogram of transcripts per cell barcode for guiding the
     placement of a filtering threshold. Returns a filtered version of adata.  
@@ -272,7 +272,10 @@ def filter_abundant_barcodes(adata, filter_cells=True, threshold=1000, library_n
     # Plot and format a weighted counts histogram
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.hist(counts, bins=np.logspace(0, 6, 100), weights=counts / sum(counts))
+    if logscale:
+        ax.hist(counts, bins=np.logspace(0, 6, 100), weights=counts / sum(counts))
+    else:
+        ax.hist(counts, bins=100, weights=counts / sum(counts))
     ax.set_xscale('log')
     ax.set_xlabel('Transcripts per cell barcode')
     ax.set_ylabel('Fraction of total transcripts')
