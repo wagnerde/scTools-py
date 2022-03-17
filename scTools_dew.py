@@ -5,7 +5,6 @@ import scipy.sparse
 import numpy as np
 import pandas as pd
 import scanpy as sc
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 # LOADING DATA
@@ -267,7 +266,7 @@ def filter_abundant_barcodes(adata, filter_cells=False, logscale=True, threshold
 
     # Sum total UMI counts for each cell barcode, save to obs
     counts = adata.X.sum(1)
-    adata.obs['n_counts_pre_norm'] = counts
+    adata.obs['n_counts'] = counts
 
     # Plot and format a weighted counts histogram
     fig = plt.figure()
