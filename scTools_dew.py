@@ -196,9 +196,9 @@ def load_genedata(adata, csv_filename):
 
 def load_celldata(adata, csv_filename, filter_nomatch=False):
     '''
-    Adds cell annotations to the 'obs' dataframe of a ScanPy AnnData object (adata) from an imported CSV file.  
+    Adds annotations to the 'obs' dataframe of a ScanPy AnnData object (adata) from an imported CSV file.  
     Uses a set of unique cell identifiers (e.g. inDrops cell barcode sequences) to match cells.  These 
-    identifiers must be present in AnnData (in adata.obs.unique_cell_id) and in the first column of the CSV file.
+    identifiers must be present in AnnData (as adata.obs.unique_cell_id) and in the first column of the CSV file.
 
     The structure of the CSV file is as follows:
     Column 1: unique cell identifiers (exact string matches to elements of adata.obs.unique_cell_id)
@@ -270,7 +270,7 @@ def filter_abundant_barcodes(adata, filter_cells=False, logscale=True, threshold
     adata.obs['n_counts'] = counts
     adata.obs['n_genes'] = genes
 
-    # Plot and format a weighted counts histogram
+    # Plot and format a weighted cell-barcode counts histogram
     fig = plt.figure()
     ax = fig.add_subplot(111)
     if logscale:
