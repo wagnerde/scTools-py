@@ -264,9 +264,11 @@ def filter_abundant_barcodes(adata, filter_cells=False, logscale=True, threshold
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
 
-    # Sum total UMI counts for each cell barcode, save to obs
-    counts = adata.X.sum(1)
+    # Sum total UMI counts and genes for each cell-barcode, save to obs
+    counts = np.array(adata.X.sum(1))
+    genes = np.array(adata.X.astype(bool).sum(axis=1))
     adata.obs['n_counts'] = counts
+    adata.obs['n_genes'] = genes
 
     # Plot and format a weighted counts histogram
     fig = plt.figure()
