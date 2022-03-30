@@ -701,18 +701,19 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
 
 # DIFFERENTIAL EXPRESSION
 
-def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05):
+def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20):
 
     # Accepts an AnnData object that has already been subsetted to cells and genes of interest.
-    # This function assumes that cells have already been ordered by dpt pseudotime (e.g. 
-    # adata.obs['dpt_pseudotime']). Genes in the AnnData object are tested for significant 
+    # This function assumes that cells have already been ordered into a linear trajectory by dpt 
+    # pseudotime (e.g. adata.obs['dpt_pseudotime']). Genes are then tested for significant 
     # differential expression between two sliding windows corresponding the highest and lowest 
-    # average expression. FDR values are then calculated by thresholding p-values calculated 
-    # from randomized data.
+    # average expression. FDR values are calculated by thresholding p-values calculated from
+    # randomized data.
     # Returns a copy of adata with the following fields added: 
     #   adata.var['dyn_peak_cell']: pseudotime-ordered cell with the highest mean expression
     #   adata.var['dyn_fdr']: fdr-corrected p-value for differential expression
     #   adata.var['dyn_fdr_flag']: boolean flag, true if fdr <= fdr_alpha
+
 
     import scipy.stats
 
@@ -742,7 +743,7 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05):
         return np.array(pv), np.array(max_cell_this_gene)
 
     # filter genes based on minimum expression
-    expressed_genes = np.squeeze(np.asarray(np.sum(adata.raw.X >= 1, axis=0) >= 20))
+    expressed_genes = np.squeeze(np.asarray(np.sum(adata.raw.X >= 1, axis=0) >= min_cells)
     adata.raw.X = adata.raw.X[:,expressed_genes]
     
     # basic preprocessing
