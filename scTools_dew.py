@@ -44,10 +44,6 @@ def load_alevin(library_names, input_path):
             lib_cell_bcds.append(s + '_' + bcd)
         D[s].obs['unique_cell_id'] = lib_cell_bcds
 
-        # Compute total counts & number of genes per cell
-        D[s].obs['n_counts'] = D[s].X.sum(1).A1
-        D[s].obs['n_genes'] = D[s].X.astype(bool).sum(axis=1)
-
     return D
 
 
