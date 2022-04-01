@@ -127,7 +127,6 @@ def load_inDrops(library_names, input_path):
 
         # Convert to ScanPy AnnData objects
         D[s] = sc.AnnData(E)
-        D[s].obs['n_counts'] = D[s].X.sum(1).A1
         D[s].var_names = gene_names
         D[s].obs['unique_cell_id'] = cell_bc_seqs
         D[s].obs['cell_names'] = cell_names
@@ -136,7 +135,7 @@ def load_inDrops(library_names, input_path):
 
     return D
 
-load_inDrops_V3 = load_inDrops # alias function name for backward compatibility
+load_inDrops_V3 = load_inDrops # alias function name 
 
 
 def load_genedata(adata, csv_filename):
@@ -697,19 +696,16 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
 
 # DIFFERENTIAL EXPRESSION
 
-def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20):
+def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05):
 
-    # Accepts an AnnData object that has already been subsetted to cells and genes of interest.
-    # This function assumes that cells have already been ordered into a linear trajectory by dpt 
-    # pseudotime (e.g. adata.obs['dpt_pseudotime']). Genes are then tested for significant 
-    # differential expression between two sliding windows corresponding the highest and lowest 
-    # average expression. FDR values are calculated by thresholding p-values calculated from
-    # randomized data.
+    # Input an AnnData object that has already been subsetted to cells and genes of interest.
+    # Cells are ranked by dpt pseudotime. Genes are tested for significant differential expression 
+    # between two sliding windows corresponding the highest and lowest average expression. FDR values
+    # are then calculated by thresholding p-values calculated from randomized data.
     # Returns a copy of adata with the following fields added: 
     #   adata.var['dyn_peak_cell']: pseudotime-ordered cell with the highest mean expression
     #   adata.var['dyn_fdr']: fdr-corrected p-value for differential expression
     #   adata.var['dyn_fdr_flag']: boolean flag, true if fdr <= fdr_alpha
-
 
     import scipy.stats
 
@@ -738,22 +734,14 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20)
             max_cell_this_gene.append(max_wind)
         return np.array(pv), np.array(max_cell_this_gene)
 
-    # filter genes based on minimum expression
-    expressed_genes = np.squeeze(np.asarray(np.sum(adata.raw.X >= 1, axis=0) >= min_cells))
-    adata.raw.X = adata.raw.X[:,expressed_genes]
-    
-    # basic preprocessing
-    sc.pp.normalize_total(adata)
-    sc.pp.log1p(adata)
-
     # import counts and pseudotime from the AnnData object
     nCells = adata.shape[0]
     nGenes = adata.shape[1]
     cell_order = np.argsort(adata.obs['dpt_pseudotime'])
     if scipy.sparse.issparse(adata.X):
-        X = adata.raw.X[cell_order,:].todense()
+        X = adata.X[cell_order,:].todense()
     else:
-        X = adata.raw.X[cell_order,:]
+        X = adata.X[cell_order,:]
 
     # calculate p values on the pseudotime-ordered data
     pv, peak_cell = get_slidingwind_pv(X, sliding_window)
