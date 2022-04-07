@@ -734,7 +734,6 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05):
             max_cell_this_gene.append(max_wind)
         return np.array(pv), np.array(max_cell_this_gene)
 
-<<<<<<< HEAD
     # pre-filter genes based on minimum expression 
     expressed_genes = np.squeeze(np.asarray(np.sum(adata.X  >= 1, axis=0) >= min_cells))
     adata = adata[:,expressed_genes]
@@ -746,8 +745,6 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05):
     sc.pp.highly_variable_genes(adata, n_top_genes=2000)
     adata=adata[:,adata.var['highly_variable']==True]
     
-=======
->>>>>>> fa1020a0f20352c8c557c0a1c99f6ef97cf02247
     # import counts and pseudotime from the AnnData object
     nCells = adata.shape[0]
     nGenes = adata.shape[1]
