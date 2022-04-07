@@ -696,7 +696,7 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
 
 # DIFFERENTIAL EXPRESSION
 
-def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20):
+def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20, nVarGenes=2000):
 
     # Input an AnnData object that has already been subsetted to cells and genes of interest.
     # Cells are ranked by dpt pseudotime. Genes are tested for significant differential expression 
@@ -742,7 +742,7 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20)
     nGenes_expressed = adata.shape[1]
 
     # pre-filter genes based on variability
-    nVarGenes = min([nGenes_expressed, 2000])
+    nVarGenes = min([nGenes_expressed, nVarGenes])
     sc.pp.normalize_per_cell(adata, counts_per_cell_after=10**6) # TPM normalization
     sc.pp.log1p(adata)
     sc.pp.highly_variable_genes(adata, n_top_genes=nVarGenes)
