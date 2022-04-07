@@ -737,17 +737,17 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05):
     # pre-filter genes based on minimum expression 
     expressed_genes = np.squeeze(np.asarray(np.sum(adata.X  >= 1, axis=0) >= min_cells))
     adata = adata[:,expressed_genes]
-    
+    nGenes_expressed = adata.shape[1]
+
     # pre-filter genes based on variability
+    nVarGenes = min([nGenes_expressed, 2000])
     adata.X = adata.raw.X
     sc.pp.normalize_per_cell(adata, counts_per_cell_after=10**6) # TPM normalization
     sc.pp.log1p(adata)
-    sc.pp.highly_variable_genes(adata, n_top_genes=2000)
-    adata=adata[:,adata.var['highly_variable']==True]
+    sc.pp.highly_variable_genes(adata, n_top_genes=nVarGenes)
+    adata = adata[:,adata.var['highly_variable'] == True]
     
     # import counts and pseudotime from the AnnData object
-    nCells = adata.shape[0]
-    nGenes = adata.shape[1]
     cell_order = np.argsort(adata.obs['dpt_pseudotime'])
     if scipy.sparse.issparse(adata.X):
         X = adata.X[cell_order,:].todense()
@@ -768,6 +768,7 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05):
     # calculate fdr as the fraction of randomized p-values that exceed this p-value
     fdr = []
     fdr_flag = []
+    nGenes = adata.shape[1]
     for j in range(nGenes):
         fdr.append(sum(pv_rand <= pv[j])/nGenes)
         fdr_flag.append(fdr[j] <= fdr_alpha)
