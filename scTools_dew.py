@@ -696,7 +696,7 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
 
 # DIFFERENTIAL EXPRESSION
 
-def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05):
+def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20):
 
     # Input an AnnData object that has already been subsetted to cells and genes of interest.
     # Cells are ranked by dpt pseudotime. Genes are tested for significant differential expression 
