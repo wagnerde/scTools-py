@@ -721,7 +721,6 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20,
         max_cell_this_gene = []
         nGenes = X.shape[1]
         for j in range(nGenes):
-            print(j)
             tmp_X_avg = []
             # get mean expression of gene j in each sliding window k
             for k in range(len(wind)-1):    
@@ -748,8 +747,6 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20,
     sc.pp.highly_variable_genes(adata, n_top_genes=nVarGenes)
     adata = adata[:,adata.var['highly_variable'] == True]
     
-    print(adata)
-
     # import counts and pseudotime from the AnnData object
     cell_order = np.argsort(adata.obs['dpt_pseudotime'])
     if scipy.sparse.issparse(adata.X):
