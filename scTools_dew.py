@@ -742,14 +742,17 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20)
             max_cell_this_gene.append(max_wind)
         return np.array(pv), np.array(max_cell_this_gene)
 
-    # filter genes based on minimum expression
-    expressed_genes = np.squeeze(np.asarray(np.sum(adata.raw.X >= 1, axis=0) >= min_cells))
-    adata.raw.X = adata.raw.X[:,expressed_genes]
+    # pre-filter genes based on minimum expression 
+    expressed_genes = np.squeeze(np.asarray(np.sum(adata.X  >= 1, axis=0) >= min_cells))
+    adata = adata[:,expressed_genes]
     
-    # basic preprocessing
-    sc.pp.normalize_total(adata)
+    # pre-filter genes based on variability
+    adata.X = adata.raw.X
+    sc.pp.normalize_per_cell(adata, counts_per_cell_after=10**6) # TPM normalization
     sc.pp.log1p(adata)
-
+    sc.pp.highly_variable_genes(adata, n_top_genes=2000)
+    adata=adata[:,adata.var['highly_variable']==True]
+    
     # import counts and pseudotime from the AnnData object
     nCells = adata.shape[0]
     nGenes = adata.shape[1]
