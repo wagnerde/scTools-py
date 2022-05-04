@@ -954,11 +954,11 @@ def plot_state_couplings_heatmap(X, state_IDs=None, title=None, tick_fontsize=10
     plt.title(title)
 
 
-def get_observed_barcode_couplings(adata, cell_state_key, umi_thresh=0, thresh_min_cells_per_hit=1):
+def get_observed_barcode_couplings(adata, cell_state_key, umi_thresh=1, thresh_min_cells_per_hit=1):
   
   # Calculate 'OBSERVED' barcode couplings between states
 
-  # For all state pairs, sum the number of times a cell with a given TracerSeq barcode hit both state j and state k
+  # For all state pairs, sum the number of times a cell with a given TracerSeq barcode was identified in both state j and state k
 
   # import data
   adata = adata[~adata.obs['CellTypeName'].isin(['NaN']),:]
@@ -966,7 +966,7 @@ def get_observed_barcode_couplings(adata, cell_state_key, umi_thresh=0, thresh_m
   cell_states = adata.obs[cell_state_key]
   
   # convert TracerSeq counts matrix to boolean based on UMI threshold
-  X = np.array(X > umi_thresh)*1
+  X = np.array(X >= umi_thresh)*1
   
   # filter to cells with both state (transcriptome) and TracerSeq information, filter out states with zero hits
   flag = X.sum(axis = 1) > 0
