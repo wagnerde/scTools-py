@@ -370,7 +370,7 @@ def runningquantile(x, y, p, nBins):
     return xOut, yOut
 
 
-def filter_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_vscore_plot=False, sample_name=''):
+def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_vscore_plot=False, sample_name=''):
     ''' 
     Filter genes by expression level and variability
     Return list of filtered gene indices
@@ -410,7 +410,7 @@ def filter_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_c
     return gene_ix[ix]
 
 
-def filter_covarying_genes(E, gene_ix, minimum_correlation=0.2, show_hist=False, sample_name=''):
+def get_covarying_genes(E, gene_ix, minimum_correlation=0.2, show_hist=False, sample_name=''):
 
     import sklearn
     import numpy as np 
