@@ -215,8 +215,7 @@ def load_celldata(adata, csv_filename, filter_nomatch=False):
     
     # load CSV header, get the names and number of IDs
     header = pd.read_csv(csv_filename, nrows=0)
-    annotation_names = list(header.columns.values)[
-        1:]  # ignore the first column header
+    annotation_names = list(header.columns.values)[1:]  # ignore the first column header
     nAnnotations = len(annotation_names)
     
     # make a dictionary of unique cell IDs and annotations from the CSV file
