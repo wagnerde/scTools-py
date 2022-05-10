@@ -370,7 +370,7 @@ def runningquantile(x, y, p, nBins):
     return xOut, yOut
 
 
-def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_vscore_plot=False, sample_name=''):
+def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_vscore_plot=False, plot_title=''):
     ''' 
     Filter genes by expression level and variability
     Return list of filtered gene indices
@@ -402,7 +402,7 @@ def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cell
         plt.scatter(np.log10(mu_gene)[ix], np.log10(FF_gene)[
                     ix], c=np.array(['black']), alpha=0.3, edgecolors=None, s=4)
         plt.plot(np.log10(xTh), np.log10(yTh))
-        plt.title(sample_name)
+        plt.title(plot_title)
         plt.xlabel('Mean Transcripts Per Cell (log10)')
         plt.ylabel('Gene Fano Factor (log10)')
         plt.show()
