@@ -370,11 +370,8 @@ def runningquantile(x, y, p, nBins):
     return xOut, yOut
 
 
-<<<<<<< HEAD
 def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_FF_plot=False, show_vscore_plot=False, return_stats=False, plot_title=''):
-=======
-def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_vscore_plot=False, plot_title=''):
->>>>>>> c25a67bf69c51cfe99456a6b62a98083f516af79
+
     ''' 
     Filter genes by expression level and variability
     Return list of filtered gene indices
@@ -383,27 +380,25 @@ def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cell
     if len(base_ix) == 0:
         base_ix = np.arange(E.shape[0])
 
+    # get variability statistics    
     Vscores, CV_eff, CV_input, gene_ix, mu_gene, FF_gene, a, b = get_vscores(E[base_ix, :])
+
+    # index genes with positive vscore     
     ix2 = Vscores > 0
-    Vscores = Vscores[ix2]
-    gene_ix = gene_ix[ix2]
-    mu_gene = mu_gene[ix2]
-    FF_gene = FF_gene[ix2]
-    
-    plt.hist()
-    min_vscore = np.percentile(Vscores, min_vscore_pctl)
-    
-    ix = (((E[:, gene_ix] >= min_counts).sum(0).A.squeeze()>= min_cells) & (Vscores >= min_vscore))
+
+    # index genes based on vscore percentile
+    min_vscore = np.percentile(Vscores[ix2], min_vscore_pctl)    
+    ix = (((E[:, gene_ix[ix2]] >= min_counts).sum(0).A.squeeze()>= min_cells) & (Vscores[ix2] >= min_vscore))
 
     if show_FF_plot:
         import matplotlib.pyplot as plt
-        x_min = 0.5 * np.min(mu_gene)
-        x_max = 2 * np.max(mu_gene)
+        x_min = 0.5 * np.min(mu_gene[ix2])
+        x_max = 2 * np.max(mu_gene[ix2])
         xTh = x_min * np.exp(np.log(x_max / x_min) * np.linspace(0, 1, 100))
         yTh = (1 + a) * (1 + b) + b * xTh
         plt.figure(figsize=(6, 6))
-        plt.scatter(np.log10(mu_gene), np.log10(FF_gene), c=np.array(['grey']), alpha=0.3, edgecolors=None, s=4)
-        plt.scatter(np.log10(mu_gene)[ix], np.log10(FF_gene)[ix], c=np.array(['black']), alpha=0.3, edgecolors=None, s=4)
+        plt.scatter(np.log10(mu_gene[ix2]), np.log10(FF_gene[ix2]), c=np.array(['grey']), alpha=0.3, edgecolors=None, s=4)
+        plt.scatter(np.log10(mu_gene[ix2])[ix], np.log10(FF_gene[ix2])[ix], c=np.log10(Vscores[ix2])[ix], cmap='jet', alpha=0.3, edgecolors=None, s=4)
         plt.plot(np.log10(xTh), np.log10(yTh))
         plt.title(plot_title)
         plt.xlabel('Mean Transcripts Per Cell (log10)')
@@ -412,17 +407,25 @@ def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cell
 
     if show_Vscore_plot:
         plt.figure(figsize=(6, 6))
-        plt.scatter(np.log10(mu_gene), np.log10(Vscores), c=np.array(['grey']), alpha=0.3, edgecolors=None, s=4)
-        plt.scatter(np.log10(mu_gene)[ix], np.log10(Vscores)[ix], c=np.log10(FF_gene)[ix], cmap='jet', alpha=0.3, edgecolors=None, s=4)
+        plt.scatter(np.log10(mu_gene[ix2]), np.log10(Vscores[ix2]), c=np.array(['grey']), alpha=0.3, edgecolors=None, s=4)
+        plt.scatter(np.log10(mu_gene[ix2])[ix], np.log10(Vscores[ix2])[ix], c=np.log10(FF_gene[ix2])[ix], cmap='jet', alpha=0.3, edgecolors=None, s=4)
         plt.title(plot_title)
         plt.xlabel('Mean Transcripts Per Cell (log10)')
         plt.ylabel('Vscores (log10)')
         plt.show()
 
     if return_stats:
-        return gene_ix[ix] Vscores mu_gene FF_gene CV_eff CV_input a b
+        return {'gene_ix': gene_ix[ix2][ix],
+                'vscores': Vscores[ix2][ix], 
+                'mu_gene': mu_gene[ix2][ix],
+                'FF_gene': FF_gene[ix2][ix],
+                'CV_eff': CV_eff,
+                'CV_input': CV_input,
+                'a': a,
+                'b': b,
+                'min_vscore': min_vscore}
     else:
-        return gene_ix[ix]
+        return gene_ix[ix2][ix]
 
 
 
