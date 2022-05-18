@@ -405,7 +405,7 @@ def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cell
         plt.ylabel('Gene Fano Factor (log10)')
         plt.show()
 
-    if show_Vscore_plot:
+    if show_vscore_plot:
         plt.figure(figsize=(6, 6))
         plt.scatter(np.log10(mu_gene[ix2]), np.log10(Vscores[ix2]), c=np.array(['grey']), alpha=0.3, edgecolors=None, s=4)
         plt.scatter(np.log10(mu_gene[ix2])[ix], np.log10(Vscores[ix2])[ix], c=np.log10(FF_gene[ix2])[ix], cmap='jet', alpha=0.3, edgecolors=None, s=4)
