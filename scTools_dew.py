@@ -370,7 +370,11 @@ def runningquantile(x, y, p, nBins):
     return xOut, yOut
 
 
+<<<<<<< HEAD
 def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_FF_plot=False, show_vscore_plot=False, return_stats=False, plot_title=''):
+=======
+def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cells=3, show_vscore_plot=False, plot_title=''):
+>>>>>>> c25a67bf69c51cfe99456a6b62a98083f516af79
     ''' 
     Filter genes by expression level and variability
     Return list of filtered gene indices
