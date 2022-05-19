@@ -383,7 +383,7 @@ def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cell
     # get variability statistics    
     Vscores, CV_eff, CV_input, gene_ix, mu_gene, FF_gene, a, b = get_vscores(E[base_ix, :])
 
-    # index genes with positive vscore     
+    # index genes with positive vscores     
     ix2 = Vscores > 0
 
     # index genes based on vscore percentile
