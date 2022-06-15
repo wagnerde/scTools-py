@@ -760,7 +760,7 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20,
         return np.array(pv), np.array(max_cell_this_gene)
 
     # pre-filter genes based on minimum expression 
-    adata.X = adata.raw.X
+    adata.X = adata.layers['raw']
     expressed_genes = np.squeeze(np.asarray(np.sum(adata.X  >= 1, axis=0) >= min_cells))
     adata = adata[:,expressed_genes]
     nGenes_expressed = adata.shape[1]
