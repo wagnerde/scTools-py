@@ -833,7 +833,18 @@ def format_axes(eq_aspect='all', rm_colorbar=False):
         if j>0:
             ax[j].remove()
 
+def darken_cmap(cmap, scale_factor):
+    cdat = np.zeros((cmap.N, 4))
+    for ii in range(cdat.shape[0]):
+        curcol = cmap(ii)
+        cdat[ii,0] = curcol[0] * scale_factor
+        cdat[ii,1] = curcol[1] * scale_factor
+        cdat[ii,2] = curcol[2] * scale_factor
+        cdat[ii,3] = 1
+    cmap = cmap.from_list(cmap.N, cdat)
+    return cmap
 
+    
 # SPARSE MATRICES
 
 def sparse_corr(A):
