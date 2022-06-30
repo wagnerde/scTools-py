@@ -271,12 +271,12 @@ def filter_abundant_barcodes(adata, filter_cells=False, logscale=True, threshold
     ax = fig.add_subplot(111)
     if logscale:
         ax.hist(counts, bins=np.logspace(0, 6, 100), weights=counts / sum(counts))
+        ax.set_xscale('log')
     else:
         ax.hist(counts, bins=100, weights=counts / sum(counts))
-    ax.set_xscale('log')
     ax.set_xlabel('Transcripts per cell barcode')
     ax.set_ylabel('Fraction of total transcripts')
-    ax.set_title(library_name + ' (Weighted)')
+    ax.set_title(library_name)
 
     # Overlay the counts threshold as a vertical line
     ax.plot([threshold, threshold], ax.get_ylim())
