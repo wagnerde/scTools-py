@@ -256,11 +256,11 @@ def filter_abundant_barcodes(adata, filter_cells=False, threshold=1000, library_
     placement of a filtering threshold. Returns a filtered version of adata.  
     '''
 
-    # If necessary, create the output directory
+    # if necessary, create the output directory
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
 
-    # Use adata.uns['library_id'] if it exists
+    # use adata.uns['library_id'] if it exists
     if not library_id:
       if 'library_id' in adata.uns:
         library_id = adata.uns['library_id']
