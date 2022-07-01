@@ -349,7 +349,7 @@ def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_pa
 
     # If requested, return a filtered version of adata
     if filter_cells:
-        sc.pp.filter_cells(adata, min_counts=threshold, inplace=True)
+        adata = adata[adata.obs.pct_counts_mt < threshold, :]
         return adata
 
 
