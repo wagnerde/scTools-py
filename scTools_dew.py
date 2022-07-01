@@ -350,7 +350,8 @@ def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_pa
     # If requested, return a filtered version of adata
     if filter_cells:
         adata = adata[adata.obs['pct_counts_mito'] < threshold, :]
-        return adata
+    
+    return adata
 
 
 # VARIABLE GENES
