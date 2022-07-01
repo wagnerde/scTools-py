@@ -250,7 +250,7 @@ def load_celldata(adata, csv_filename, filter_nomatch=False):
 
 # DATA PRE-PROCESSING
 
-def filter_abundant_barcodes(adata, filter_cells=False, logscale=True, threshold=1000, library_id='', save_path='./figures/'):
+def filter_abundant_barcodes(adata, filter_cells=False, threshold=1000, library_id='', save_path='./figures/'):
     '''
     Plots a weighted histogram of transcripts per cell barcode for guiding the
     placement of a filtering threshold. Returns a filtered version of adata.  
@@ -260,20 +260,23 @@ def filter_abundant_barcodes(adata, filter_cells=False, logscale=True, threshold
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
 
+    # Use adata.uns['library_id'] if it exists
+    if not library_id:
+      if 'library_id' in adata.uns:
+        library_id = adata.uns['library_id']
+
     # Sum total UMI counts and genes for each cell-barcode, save to obs
     counts = np.array(adata.X.sum(1))
     genes = np.array(adata.X.astype(bool).sum(axis=1))
-    adata.obs['n_counts'] = counts
-    adata.obs['n_genes'] = genes
+    adata.obs['total_counts'] = counts
+    adata.obs['n_genes_by_counts'] = genes
+    ix = counts >= threshold
 
     # Plot and format a weighted cell-barcode counts histogram
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    if logscale:
-        ax.hist(counts, bins=np.logspace(0, 6, 100), weights=counts / sum(counts))
-        ax.set_xscale('log')
-    else:
-        ax.hist(counts, bins=100, weights=counts / sum(counts))
+    ax.hist(counts, bins=np.logspace(0, 6, 100), weights=counts / sum(counts))
+    ax.set_xscale('log')
     ax.set_xlabel('Transcripts per cell barcode')
     ax.set_ylabel('Fraction of total transcripts')
     ax.set_title(library_id)
@@ -287,17 +290,65 @@ def filter_abundant_barcodes(adata, filter_cells=False, logscale=True, threshold
     plt.show()
     plt.close()
 
-    # Print the number of cell barcodes that will be retained vs. the total number of
-    # cell barcodes in the library
-    ix = counts >= threshold
-    print('Filtering barcodes for', library_id,
-          ' (', np.sum(ix), '/', counts.shape[0], ')')
+    # Print the number of cell barcodes that will be retained 
+    print('Barcode Filtering ' + library_id + ' (' + str(np.sum(ix)) + '/' + str(counts.shape[0]) + ' cells retained)')
+    print()
 
-    # Return a filtered version of adata
+    # If requested, return a filtered version of adata
     if filter_cells:
         sc.pp.filter_cells(adata, min_counts=threshold, inplace=True)
+        return adata
 
-    return adata
+
+def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_path='./figures/'):
+    '''
+    Plots a weighted histogram of % mitochondrial transcripts per cell barcode for guiding the
+    placement of a filtering threshold. Returns a filtered version of adata if filter_cells=True.  
+    '''
+
+    # If necessary, create the output directory
+    if not os.path.isdir(save_path):
+        os.makedirs(save_path)
+    
+    # Use adata.uns['library_id'] if it exists
+    if not library_id:
+      if 'library_id' in adata.uns:
+        library_id = adata.uns['library_id']
+
+    # Calculate QC metric for % mitochondrial counts per cell
+    adata.var["mito"] = adata.var_names.str.startswith(('mt-','MT-'))
+    sc.pp.calculate_qc_metrics(adata, qc_vars=['mito'], inplace=True)
+    counts = adata.obs['pct_counts_mito']
+    ix = counts <= threshold
+
+    # Plot and format a weighted mito counts histogram
+    sc.set_figure_params(dpi=100, figsize=[4,4], fontsize=12)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.hist(counts, bins=200)
+    ax.set_yscale('log')
+    ax.set_xlabel('% Mitochondrial RNA counts per cell')
+    ax.set_ylabel('# Cells per bin')
+    ax.set_title(library_id)
+    ax.text(0.99,0.95, str(np.sum(ix)) + '/' + str(counts.shape[0]) + ' cells retained', ha='right', va='center', transform=ax.transAxes)
+    
+    # Overlay the counts threshold as a vertical line
+    ax.plot([threshold, threshold], [0, ax.get_ylim()[1]])
+
+    # Save figure to file
+    fig.tight_layout()
+    plt.savefig(save_path + 'mito_hist_' + library_id + '.png')
+    plt.show()
+    plt.close()
+
+    # Print the number of cell barcodes that will be retained 
+    print('Mito-Filtering ' + library_id + ' (' + str(np.sum(ix)) + '/' + str(counts.shape[0]) + ' cells retained)')
+    print()
+
+    # If requested, return a filtered version of adata
+    if filter_cells:
+        sc.pp.filter_cells(adata, min_counts=threshold, inplace=True)
+        return adata
 
 
 # VARIABLE GENES
