@@ -273,6 +273,7 @@ def filter_abundant_barcodes(adata, filter_cells=False, threshold=1000, library_
     ix = counts >= threshold
 
     # Plot and format a weighted cell-barcode counts histogram
+    sc.set_figure_params(dpi=100, figsize=[4,4], fontsize=12)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.hist(counts, bins=np.logspace(0, 6, 100), weights=counts / sum(counts))
@@ -280,6 +281,7 @@ def filter_abundant_barcodes(adata, filter_cells=False, threshold=1000, library_
     ax.set_xlabel('Transcripts per cell barcode')
     ax.set_ylabel('Fraction of total transcripts')
     ax.set_title(library_id)
+    ax.text(0.99,0.95, str(np.sum(ix)) + '/' + str(counts.shape[0]) + ' cells retained', ha='right', va='center', transform=ax.transAxes)
 
     # Overlay the counts threshold as a vertical line
     ax.plot([threshold, threshold], ax.get_ylim())
