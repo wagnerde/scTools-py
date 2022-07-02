@@ -318,8 +318,9 @@ def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_pa
         library_id = adata.uns['library_id']
 
     # Calculate QC metric for % mitochondrial counts per cell
-    adata.var["mito"] = adata.var_names.str.startswith(('mt-','MT-'))
-    sc.pp.calculate_qc_metrics(adata, qc_vars=['mito'], inplace=True)
+    if 'pct_counts_mito' not in adata.obs:
+        adata.var["mito"] = adata.var_names.str.startswith(('mt-','MT-'))
+        sc.pp.calculate_qc_metrics(adata, qc_vars=['mito'], inplace=True)
     counts = adata.obs['pct_counts_mito']
     ix = counts <= threshold
 
