@@ -372,8 +372,7 @@ def filter_scrublet(adata, filter_cells=False, threshold=5):
     sc.external.pl.scrublet_score_distribution(adata, scale_hist_sim='log')
     
     # print filtering summary
-    print(library_id+": Doublet-like Cells = {:d} " .format(sum(adata_dict[libnames[n]].obs['predicted_doublet'])))
-    print(library_id+": Non-Doublet Cells = {:d}" .format(len(adata_dict[libnames[n]]) - sum(adata_dict[libnames[n]].obs['predicted_doublet'])))
+    print('Doublet Filtering ' + library_id + ' (' + str(len(adata) - sum(adata.obs['predicted_doublet'])) + '/' + str(adata.shape[0]) + ' cells retained)')
     print()
     
     if filter_cells:  
