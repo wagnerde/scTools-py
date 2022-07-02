@@ -8,6 +8,8 @@ import pandas as pd
 import scanpy as sc
 import matplotlib.pyplot as plt
 import seaborn as sns
+import warnings
+
 
 # LOADING DATA
 
@@ -352,6 +354,31 @@ def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_pa
     if filter_cells:
         adata = adata[adata.obs['pct_counts_mito'] < threshold, :]
     
+    return adata
+
+def filter_scrublet(adata, threshold, filter_cells=False):
+
+    # disable copy data warning
+    warnings.filterwarnings('ignore')
+
+    # use adata.uns['library_id'] if it exists
+    if 'library_id' in adata.uns:
+      library_id = adata.uns['library_id']
+    else:
+      library_id = ''
+  
+    # calculate and plot doublet scores 
+    sc.external.pp.scrublet(adata, threshold=threshold, verbose=False)
+    sc.external.pl.scrublet_score_distribution(adata, scale_hist_sim='log')
+    
+    # print filtering summary
+    print(library_id+": Doublet-like Cells = {:d} " .format(sum(adata_dict[libnames[n]].obs['predicted_doublet'])))
+    print(library_id+": Non-Doublet Cells = {:d}" .format(len(adata_dict[libnames[n]]) - sum(adata_dict[libnames[n]].obs['predicted_doublet'])))
+    print()
+    
+    if filter_cells:  
+        adata = adata[~adata.obs['predicted_doublet'],:]
+
     return adata
 
 
