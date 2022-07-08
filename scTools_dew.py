@@ -356,6 +356,7 @@ def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_pa
     
     return adata
 
+
 def filter_scrublet(adata, filter_cells=False, threshold=5):
 
     # disable copy data warning
