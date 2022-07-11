@@ -801,7 +801,7 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
 
-# DIFFERENTIAL EXPRESSION
+# TRAJECTORY ANALYSIS
 
 def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20, nVarGenes=2000):
 
@@ -888,7 +888,49 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20,
 
     return adata
 
-    
+
+def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes=False, save=None):
+  
+    # get xy plotting data from adata
+    df=pd.DataFrame()
+    df['x']=adata.obs['dpt_pseudotime']
+
+    # key can be either a gene or a column in 'obs'
+    if key in adata.var_names:
+        df['y']=adata[:, adata.var_names==key].layers[layer].todense()
+    elif key in adata.obs.columns:
+        df['y']=adata.obs[key]
+
+    # calculate sliding window mean and std dev on sorted x
+    df=df.sort_values('x')
+    df['y_mn'] = df['y'].rolling(sliding_window).mean().tolist()
+    df['y_std'] = df['y'].rolling(sliding_window).std().tolist()
+
+    # Define variables to plot, upper and lower bounds = 1 * sd 
+    y_mean = df['y_mn']
+    x = df['x']
+    y_std = df['y_std']
+    lower = y_mean - y_std
+    upper = y_mean + y_std
+
+    # draw plot with error band and extra formatting to match seaborn style
+    fig, ax = plt.subplots(figsize=(4,4))
+    ax.plot(x, y_mean, label='signal mean')
+    ax.plot(x, lower, color='tab:blue', alpha=0.1)
+    ax.plot(x, upper, color='tab:blue', alpha=0.1)
+    ax.fill_between(x, lower, upper, alpha=0.2)
+    ax.set_xlabel('dpt pseudotime')
+    ax.set_ylabel(key)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    if save:
+      plt.savefig('dpt_lineplot'+save)
+
+    if return_axes:
+        return ax
+
+  
 # PLOTTING
 
 def format_axes(eq_aspect='all', rm_colorbar=False):
