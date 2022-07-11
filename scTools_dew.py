@@ -805,15 +805,17 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
 
 def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20, nVarGenes=2000):
 
-    # Input an AnnData object that has already been subsetted to cells and (optionally) genes of interest.
-    # Cells are ranked by dpt pseudotime. Genes are tested for significant differential expression 
-    # between two sliding windows corresponding the highest and lowest average expression. FDR values
-    # are then calculated by thresholding p-values calculated from randomized data.
-    # Returns a copy of adata with the following fields added: 
-    #   adata.var['dyn_peak_cell']: pseudotime-ordered cell with the highest mean expression
-    #   adata.var['dyn_fdr']: fdr-corrected p-value for differential expression
-    #   adata.var['dyn_fdr_flag']: boolean flag, true if fdr <= fdr_alpha
-
+    '''
+    Expects an AnnData object that has already been subsetted to cells and/or genes of interest.
+    Cells are ranked by dpt pseudotime. Genes are tested for significant differential expression 
+    between two sliding windows corresponding the highest and lowest average expression. FDR values
+    are then calculated by thresholding p-values calculated from randomized data.
+    Returns a copy of adata with the following fields added: 
+        adata.var['dyn_peak_cell']: pseudotime-ordered cell with the highest mean expression
+        adata.var['dyn_fdr']: fdr-corrected p-value for differential expression
+        adata.var['dyn_fdr_flag']: boolean flag, true if fdr <= fdr_alpha
+    '''
+    
     import scipy.stats
 
     # Function for calculating p-values for each gene from min & max sliding window expression values
@@ -891,6 +893,12 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20,
 
 def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes=False, save=None):
   
+    '''
+    Expects an AnnData object that has already been subsetted to cells and/or genes of interest.
+    Generates a lineplot for a single gene or AnnData observation (obs matrix column) error bands 
+    at +/- 1 sd.  
+    '''
+
     # get xy plotting data from adata
     df=pd.DataFrame()
     df['x']=adata.obs['dpt_pseudotime']
@@ -925,7 +933,7 @@ def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes
     ax.spines['right'].set_visible(False)
 
     if save:
-      plt.savefig('dpt_lineplot'+save)
+      plt.savefig('figures/dpt_lineplot'+save)
 
     if return_axes:
         return ax
