@@ -905,7 +905,7 @@ def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes
 
     # key can be either a gene or a column in 'obs'
     if key in adata.var_names:
-        df['y']=adata[:, adata.var_names==key].layers[layer].todense()
+        df['y']=convert_to_dense(adata[:, adata.var_names==key].layers[layer])
     elif key in adata.obs.columns:
         df['y']=adata.obs[key]
 
@@ -979,14 +979,22 @@ def darken_cmap(cmap, scale_factor):
     
 # SPARSE MATRICES
 
-def sparse_corr(A):
-        
-    N = A.shape[0]
-    C=((A.T*A -(sum(A).T*sum(A)/N))/(N-1)).todense()
+def sparse_corr(X):     
+    N = X.shape[0]
+    C=((X.T*X -(sum(X).T*sum(X)/N))/(N-1)).todense()
     V=np.sqrt(np.mat(np.diag(C)).T*np.mat(np.diag(C)))
-    COR = np.divide(C,V+1e-119)
-    
-    return COR
+    X_corr = np.divide(C,V+1e-119)
+    return X_corr
+
+def convert_to_sparse(X):
+  if not scipy.sparse.issparse(X):
+    X=scipy.sparse.csr_matrix(X)  
+  return X
+
+def convert_to_dense(X):
+  if scipy.sparse.issparse(X):
+    X=X.todense()
+  return X
 
 
 # TRACERSEQ ANALYSIS
