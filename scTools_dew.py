@@ -1121,7 +1121,7 @@ def plot_cells_vs_barcodes_heatmap(adata, cell_labels_key=None, umi_thresh=0):
   cg.ax_col_dendrogram.set_visible(False) # hide the column dendrogram 
 
 
-def plot_state_couplings_heatmap(X, state_IDs=None, title=None, tick_fontsize=10, figsize=8, do_clustering=False):   
+def plot_state_couplings_heatmap(X, state_IDs=None, title=None, tick_fontsize=10, figsize=8, do_clustering=False, metric='euclidean'):   
     
     # Plot a Seaborn clustermap of state-state barcode couplings
 
@@ -1130,7 +1130,7 @@ def plot_state_couplings_heatmap(X, state_IDs=None, title=None, tick_fontsize=10
     
     vmax = (np.percentile(X-np.diag(np.diag(X)),95) + np.percentile(X-np.diag(np.diag(X)),98))/2
     vmax = (np.percentile(X-np.diag(np.diag(X)),95) + np.percentile(X-np.diag(np.diag(X)),98))/2
-    cg = sns.clustermap(X, metric='correlation', method='average', cmap='viridis', 
+    cg = sns.clustermap(X, metric='euclidean', method='average', cmap='viridis', 
                         cbar_pos=None, dendrogram_ratio=0.2, figsize=(figsize,figsize),
                         col_cluster = do_clustering, row_cluster = do_clustering,
                         xticklabels = 1, yticklabels = 1, colors_ratio=0.02, vmax=vmax)  
@@ -1188,6 +1188,24 @@ def get_oe_barcode_couplings(X_obs):
   return X_oe
 
 
+def plot_clinc_neighbor_joining(output_directory, node_groups, celltype_names, X_history, merged_pairs_history, node_names_history):
+    fig,axs = plt.subplots(1,len(X_history))
+    for i,X in enumerate(X_history):
+        #vmaxx = 40
+        #axs[i].imshow(X,vmax=vmaxx)
+        axs[i].imshow(X)
+        axs[i].grid(None)
+        ii,jj = merged_pairs_history[i]
+        axs[i].scatter([jj],[ii],s=100, marker='*', c='white')
+
+        column_groups = [node_groups[n] for n in node_names_history[i]]
+        column_labels = [' + '.join([celltype_names[n] for n in grp]) for grp in column_groups]
+        axs[i].set_xticks(np.arange(X.shape[1])+.4)
+        axs[i].set_xticklabels(column_labels, rotation=90, ha='right')
+        axs[i].set_xlim([-.5,X.shape[1]-.5])
+        axs[i].set_ylim([X.shape[1]-.5,-.5])
+    fig.set_size_inches((100,100))
+    #plt.savefig(output_directory+'/neighbor_joint_heatmaps.pdf')
 
 
 # FORCE LAYOUT
