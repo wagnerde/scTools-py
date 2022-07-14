@@ -1121,7 +1121,7 @@ def plot_cells_vs_barcodes_heatmap(adata, cell_labels_key=None, umi_thresh=0):
   cg.ax_col_dendrogram.set_visible(False) # hide the column dendrogram 
 
 
-def plot_state_couplings_heatmap(X, state_IDs=None, title=None, tick_fontsize=10, figsize=8, do_clustering=False, metric='euclidean'):   
+def plot_state_couplings_heatmap(X, state_IDs=None, title=None, tick_fontsize=10, figsize=8, do_clustering=False, metric='correlation', linkage='average'):   
     
     # Plot a Seaborn clustermap of state-state barcode couplings
 
@@ -1130,7 +1130,7 @@ def plot_state_couplings_heatmap(X, state_IDs=None, title=None, tick_fontsize=10
     
     vmax = (np.percentile(X-np.diag(np.diag(X)),95) + np.percentile(X-np.diag(np.diag(X)),98))/2
     vmax = (np.percentile(X-np.diag(np.diag(X)),95) + np.percentile(X-np.diag(np.diag(X)),98))/2
-    cg = sns.clustermap(X, metric='euclidean', method='average', cmap='viridis', 
+    cg = sns.clustermap(X, metric=metric, method=linkage, cmap='viridis', 
                         cbar_pos=None, dendrogram_ratio=0.2, figsize=(figsize,figsize),
                         col_cluster = do_clustering, row_cluster = do_clustering,
                         xticklabels = 1, yticklabels = 1, colors_ratio=0.02, vmax=vmax)  
