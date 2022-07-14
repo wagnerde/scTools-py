@@ -847,10 +847,12 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20,
     adata_dyn = adata.copy()
 
     # reinitiate adata_dyn from raw counts
-    if 'raw' in adata_dyn.layers:
-        adata_dyn.X = adata_dyn.layers['raw']
+    if 'raw_nolog' in adata_dyn.layers:
+        adata_dyn.X = adata_dyn.layers['raw_nolog']
     elif adata_dyn.raw:
         adata_dyn.X = adata_dyn.raw.X
+    elif 'raw' in adata_dyn.layers:
+        adata_dyn.X = adata_dyn.layers['raw']
     else:
         print('Error: raw counts layer required but not provided')
         return
