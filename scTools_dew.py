@@ -843,30 +843,43 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20,
             max_cell_this_gene.append(max_wind)
         return np.array(pv), np.array(max_cell_this_gene)
 
+    # create a new adata object for the dynamic genes analysis
+    adata_dyn = adata.copy()
+
+    # reinitiate adata_dyn from raw counts
+    if 'raw' in adata_dyn.layers:
+        adata_dyn.X = adata_dyn.layers['raw']
+    elif adata_dyn.raw:
+        adata_dyn.X = adata_dyn.raw.X
+    else:
+        print('Error: raw counts layer required but not provided')
+        return
+
     # pre-filter genes based on minimum expression 
-    adata.X = adata.layers['raw']
-    expressed_genes = np.squeeze(np.asarray(np.sum(adata.X  >= 1, axis=0) >= min_cells))
-    adata = adata[:,expressed_genes]
-    nGenes_expressed = adata.shape[1]
+    expressed_genes = np.squeeze(np.asarray(np.sum(adata_dyn.X  >= 1, axis=0) >= min_cells))
+    adata_dyn = adata_dyn[:,expressed_genes]
+    nGenes_expressed = adata_dyn.shape[1]
 
     # pre-filter genes based on variability
     nVarGenes = min([nGenes_expressed, nVarGenes])
-    sc.pp.normalize_per_cell(adata, counts_per_cell_after=10**6) # TPM normalization
-    sc.pp.log1p(adata)
-    sc.pp.highly_variable_genes(adata, n_top_genes=nVarGenes)
-    adata = adata[:,adata.var['highly_variable'] == True]
+    sc.pp.normalize_per_cell(adata_dyn, counts_per_cell_after=10**6) # TPM normalization
+    sc.pp.log1p(adata_dyn)
+    sc.pp.highly_variable_genes(adata_dyn, n_top_genes=nVarGenes)
+    adata_dyn = adata_dyn[:,adata_dyn.var['highly_variable'] == True]
     
     # import counts and pseudotime from the AnnData object
-    cell_order = np.argsort(adata.obs['dpt_pseudotime'])
-    if scipy.sparse.issparse(adata.X):
-        X = adata.X[cell_order,:].todense()
+    cell_order = np.argsort(adata_dyn.obs['dpt_pseudotime'])
+    
+    # reorder cells
+    if scipy.sparse.issparse(adata_dyn.X):
+        X = adata_dyn.X[cell_order,:].todense()
     else:
-        X = adata.X[cell_order,:]
+        X = adata_dyn.X[cell_order,:]
 
     # calculate p values on the pseudotime-ordered data
     print('calculating p-values')
     pv, peak_cell = get_slidingwind_pv(X, sliding_window)
-    adata.var['dyn_peak_cell'] = peak_cell#np.argsort(gene_ord)
+    adata_dyn.var['dyn_peak_cell'] = peak_cell#np.argsort(gene_ord)
     print('done calculating p-values')
     
     # calculate p values on the randomized data
@@ -880,15 +893,15 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20,
     print('calculating fdr')
     fdr = []
     fdr_flag = []
-    nGenes = adata.shape[1]
+    nGenes = adata_dyn.shape[1]
     for j in range(nGenes):
         fdr.append(sum(pv_rand <= pv[j])/nGenes)
         fdr_flag.append(fdr[j] <= fdr_alpha)
-    adata.var['dyn_fdr'] = fdr
-    adata.var['dyn_fdr_flag'] = fdr_flag
+    adata_dyn.var['dyn_fdr'] = fdr
+    adata_dyn.var['dyn_fdr_flag'] = fdr_flag
     print('done calculating fdr')
 
-    return adata
+    return adata_dyn
 
 
 def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes=False, save=None):
@@ -1118,7 +1131,7 @@ def plot_state_couplings_heatmap(X, state_IDs=None, title=None, tick_fontsize=10
     cg = sns.clustermap(X, metric='correlation', method='average', cmap='viridis', 
                         cbar_pos=None, dendrogram_ratio=0.2, figsize=(figsize,figsize),
                         col_cluster = do_clustering, row_cluster = do_clustering,
-                        xticklabels = 1, yticklabels = 1,colors_ratio=0.02, vmax=vmax)  
+                        xticklabels = 1, yticklabels = 1, colors_ratio=0.02, vmax=vmax)  
     cg.ax_col_dendrogram.set_visible(False) # hide the column dendrogram
     cg.ax_heatmap.set_xticklabels(cg.ax_heatmap.get_xmajorticklabels(), fontsize = tick_fontsize)
     cg.ax_heatmap.set_yticklabels(cg.ax_heatmap.get_ymajorticklabels(), fontsize = tick_fontsize)
