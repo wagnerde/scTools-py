@@ -3,12 +3,15 @@ import pickle
 import os
 import sys
 import scipy.sparse
+import scipy.stats
+import sklearn
 import numpy as np
 import pandas as pd
 import scanpy as sc
 import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
+import igraph as ig
 
 
 # LOADING DATA
@@ -473,7 +476,6 @@ def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cell
     ix = (((E[:, gene_ix[ix2]] >= min_counts).sum(0).A.squeeze()>= min_cells) & (Vscores[ix2] >= min_vscore))
 
     if show_FF_plot:
-        import matplotlib.pyplot as plt
         x_min = 0.5 * np.min(mu_gene[ix2])
         x_max = 2 * np.max(mu_gene[ix2])
         xTh = x_min * np.exp(np.log(x_max / x_min) * np.linspace(0, 1, 100))
@@ -515,8 +517,7 @@ def get_variable_genes(E, base_ix=[], min_vscore_pctl=85, min_counts=3, min_cell
 
 def get_covarying_genes(E, gene_ix, minimum_correlation=0.2, show_hist=False, sample_name=''):
 
-    import sklearn
-    import numpy as np 
+
 
     # subset input matrix to gene_ix
     E = E[:,gene_ix]
@@ -534,7 +535,6 @@ def get_covarying_genes(E, gene_ix, minimum_correlation=0.2, show_hist=False, sa
   
     # plot distribution of top gene-gene correlations
     if show_hist:
-        import matplotlib.pyplot as plt
         plt.figure(figsize=(6, 6))
         plt.hist(max_neighbor_corr,bins=100)
         plt.title(sample_name)
@@ -548,7 +548,6 @@ def get_covarying_genes(E, gene_ix, minimum_correlation=0.2, show_hist=False, sa
 # GEPHI IMPORT & EXPORT
 
 def export_to_graphml(adata, filename='test.graphml', directed=None):    
-    import igraph as ig
 
     adjacency = adata.uns['neighbors']['connectivities']
 
@@ -603,15 +602,14 @@ def train_classifiers(X, labels, PCs, gene_ind):
     '''
 
     # Import sklearn classifier packages
-    from sklearn.model_selection import train_test_split
-    from sklearn.neural_network import MLPClassifier
-    from sklearn.neighbors import KNeighborsClassifier
-    from sklearn.svm import SVC
-    from sklearn.tree import DecisionTreeClassifier
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.naive_bayes import GaussianNB
-    from sklearn.discriminant_analysis import LinearDiscriminantAnalysis    
-
+    #from sklearn.model_selection import train_test_split
+    #from sklearn.neural_network import MLPClassifier
+    #from sklearn.neighbors import KNeighborsClassifier
+    #from sklearn.svm import SVC
+    #from sklearn.tree import DecisionTreeClassifier
+    #from sklearn.ensemble import RandomForestClassifier
+    #from sklearn.naive_bayes import GaussianNB
+    #from sklearn.discriminant_analysis import LinearDiscriminantAnalysis    
 
     # Subset by gene indices; project X into PCA subspace
     X_ind = X[:,gene_ind]
@@ -621,17 +619,17 @@ def train_classifiers(X, labels, PCs, gene_ind):
     # Specify classifiers and their settings 
     classifier_names = ['NearestNeighbors', 'SVM-Linear', 'SVM-RBF', 'DecisionTree', 'RandomForest', 
                         'NeuralNet', 'NaiveBayes', 'LDA']
-    classifiers = [KNeighborsClassifier(20, weights='distance', metric='correlation'),
-                   SVC(kernel='linear', gamma='scale', C=1, random_state=802),
-                   SVC(kernel='rbf', gamma='scale', C=1, random_state=802),
-                   DecisionTreeClassifier(random_state=802),
-                   RandomForestClassifier(n_estimators=200, random_state=802),
-                   MLPClassifier(random_state=802),
-                   GaussianNB(),
-                   LinearDiscriminantAnalysis()]
+    classifiers = [sklearn.neighbors.KNeighborsClassifier(20, weights='distance', metric='correlation'),
+                   sklearn.svm.SVC(kernel='linear', gamma='scale', C=1, random_state=802),
+                   sklearn.svm.SVC(kernel='rbf', gamma='scale', C=1, random_state=802),
+                   sklearn.tree.DecisionTreeClassifier(random_state=802),
+                   sklearn.ensemble.RandomForestClassifier(n_estimators=200, random_state=802),
+                   sklearn.neural_network.MLPClassifier(random_state=802),
+                   sklearn.naive_bayes.GaussianNB(),
+                   sklearn.discriminant_analysis.LinearDiscriminantAnalysis()]
     
     # Split data into training and test subsets
-    X_train, X_test, labels_train, labels_test = train_test_split(X_PCA, labels, test_size=0.5, random_state=802)
+    X_train, X_test, labels_train, labels_test = sklearn.model_selection.train_test_split(X_PCA, labels, test_size=0.5, random_state=802)
         
     # Build a dictionary of classifiers
     scores = []
@@ -705,11 +703,8 @@ def plot_confusion_matrix(labels_A, labels_B,
 
     '''
 
-    from sklearn.metrics import confusion_matrix
-    from sklearn.utils.multiclass import unique_labels
-
     # Compute confusion matrix; 
-    cm = confusion_matrix(labels_A, labels_B)
+    cm = sklearn.metrics.confusion_matrix(labels_A, labels_B)
     non_empty_rows = cm.sum(axis=0)!=0
     non_empty_cols = cm.sum(axis=1)!=0
     cm = cm[:,non_empty_rows]
@@ -816,7 +811,6 @@ def get_dynamic_genes(adata, sliding_window=100, fdr_alpha = 0.05, min_cells=20,
         adata.var['dyn_fdr_flag']: boolean flag, true if fdr <= fdr_alpha
     '''
     
-    import scipy.stats
 
     # Function for calculating p-values for each gene from min & max sliding window expression values
     def get_slidingwind_pv(X, sliding_window):
@@ -1071,9 +1065,6 @@ def load_tracerseq_barcode_counts(adata, key, path):
 
 
 def plot_cells_vs_barcodes_heatmap(adata, cell_labels_key=None, umi_thresh=0):
-
-  import seaborn as sns
-  import sys
   
   X = adata.obsm['TracerSeq']
 
@@ -1189,7 +1180,11 @@ def get_oe_barcode_couplings(X_obs):
 
 
 def plot_clinc_neighbor_joining(output_directory, node_groups, celltype_names, X_history, merged_pairs_history, node_names_history):
+    
+    # updated version of clinc function
+
     fig,axs = plt.subplots(1,len(X_history))
+    
     for i,X in enumerate(X_history):
         #vmaxx = 40
         #axs[i].imshow(X,vmax=vmaxx)
@@ -1204,6 +1199,7 @@ def plot_clinc_neighbor_joining(output_directory, node_groups, celltype_names, X
         axs[i].set_xticklabels(column_labels, rotation=90, ha='right')
         axs[i].set_xlim([-.5,X.shape[1]-.5])
         axs[i].set_ylim([X.shape[1]-.5,-.5])
+    
     fig.set_size_inches((100,100))
     #plt.savefig(output_directory+'/neighbor_joint_heatmaps.pdf')
 
