@@ -307,10 +307,10 @@ def filter_abundant_barcodes(adata, filter_cells=False, threshold=1000, library_
         return adata
 
 
-def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_path='./figures/'):
+def filter_mito(adata, filter_cells=False, upper_threshold=100, lower_threshold=0, library_id='', save_path='./figures/'):
     '''
     Plots a weighted histogram of % mitochondrial transcripts per cell barcode for guiding the
-    placement of a filtering threshold. Returns a filtered version of adata if filter_cells=True.  
+    placement of filtering thresholds. Returns a filtered version of adata if filter_cells=True.  
     '''
 
     # If necessary, create the output directory
@@ -327,7 +327,9 @@ def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_pa
         adata.var["mito"] = adata.var_names.str.startswith(('mt-','MT-'))
         sc.pp.calculate_qc_metrics(adata, qc_vars=['mito'], inplace=True)
     counts = adata.obs['pct_counts_mito']
-    ix = counts <= threshold
+    ix = np.where((counts > lower_threshold) & (counts < upper_threshold), True, False)
+    
+    #ix1 = counts < upper_threshold && counts > lower_threshold
 
     # Plot and format a weighted mito counts histogram
     sc.set_figure_params(dpi=100, figsize=[4,4], fontsize=12)
@@ -340,8 +342,9 @@ def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_pa
     ax.set_title(library_id)
     ax.text(0.99,0.95, str(np.sum(ix)) + '/' + str(counts.shape[0]) + ' cells retained', ha='right', va='center', transform=ax.transAxes)
     
-    # Overlay the counts threshold as a vertical line
-    ax.plot([threshold, threshold], [0, ax.get_ylim()[1]])
+    # Overlay the counts thresholds as vertical lines
+    ax.plot([upper_threshold, upper_threshold], [0, ax.get_ylim()[1]])
+    ax.plot([lower_threshold, lower_threshold], [0, ax.get_ylim()[1]])
 
     # Save figure to file
     fig.tight_layout()
@@ -355,7 +358,7 @@ def filter_mito(adata, filter_cells=False, threshold=100, library_id='', save_pa
 
     # If requested, return a filtered version of adata
     if filter_cells:
-        adata = adata[adata.obs['pct_counts_mito'] < threshold, :]
+        adata = adata[ix, :]
     
     return adata
 
