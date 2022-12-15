@@ -323,9 +323,9 @@ def filter_mito(adata, filter_cells=False, upper_threshold=100, lower_threshold=
         library_id = adata.uns['library_id']
 
     # Calculate QC metric for % mitochondrial counts per cell
-    if 'pct_counts_mito' not in adata.obs:
-        adata.var["mito"] = adata.var_names.str.startswith(('mt-','MT-'))
-        sc.pp.calculate_qc_metrics(adata, qc_vars=['mito'], inplace=True)
+    adata.var["mito"] = adata.var_names.str.startswith(('mt-','MT-'))
+    adata.var['ribo'] = adata.var_names.str.startswith(('RPS','rps','RPL','rpl'))
+    sc.pp.calculate_qc_metrics(adata, qc_vars=['mito','ribo'], inplace=True)
     counts = adata.obs['pct_counts_mito']
     ix = np.where((counts > lower_threshold) & (counts < upper_threshold), True, False)
     
@@ -335,7 +335,7 @@ def filter_mito(adata, filter_cells=False, upper_threshold=100, lower_threshold=
     sc.set_figure_params(dpi=100, figsize=[4,4], fontsize=12)
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.hist(counts, bins=200)
+    ax.hist(counts, bins=100)
     ax.set_yscale('log')
     ax.set_xlabel('% Mitochondrial RNA counts per cell')
     ax.set_ylabel('# Cells per bin')
@@ -354,6 +354,61 @@ def filter_mito(adata, filter_cells=False, upper_threshold=100, lower_threshold=
 
     # Print the number of cell barcodes that will be retained 
     print('Mito-Filtering ' + library_id + ' (' + str(np.sum(ix)) + '/' + str(counts.shape[0]) + ' cells retained)')
+    print()
+
+    # If requested, return a filtered version of adata
+    if filter_cells:
+        adata = adata[ix, :]
+    
+    return adata
+    
+
+def filter_ribo(adata, filter_cells=False, upper_threshold=100, lower_threshold=0, library_id='', save_path='./figures/'):
+    '''
+    Plots a weighted histogram of % ribosomal protein transcripts per cell barcode for guiding the
+    placement of filtering thresholds. Returns a filtered version of adata if filter_cells=True.  
+    '''
+
+    # If necessary, create the output directory
+    if not os.path.isdir(save_path):
+        os.makedirs(save_path)
+    
+    # Use adata.uns['library_id'] if it exists
+    if not library_id:
+      if 'library_id' in adata.uns:
+        library_id = adata.uns['library_id']
+
+    # Calculate QC metric for % mitochondrial counts per cell
+    adata.var['ribo'] = adata.var_names.str.startswith(('RPS','rps','RPL','rpl'))
+    sc.pp.calculate_qc_metrics(adata, qc_vars=['ribo'], inplace=True)
+    counts = adata.obs['pct_counts_ribo']
+    ix = np.where((counts > lower_threshold) & (counts < upper_threshold), True, False)
+    
+    #ix1 = counts < upper_threshold && counts > lower_threshold
+
+    # Plot and format a weighted mito counts histogram
+    sc.set_figure_params(dpi=100, figsize=[4,4], fontsize=12)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.hist(counts, bins=100)
+    ax.set_yscale('log')
+    ax.set_xlabel('% Ribosomal Protein mRNA counts per cell')
+    ax.set_ylabel('# Cells per bin')
+    ax.set_title(library_id)
+    ax.text(0.99,0.95, str(np.sum(ix)) + '/' + str(counts.shape[0]) + ' cells retained', ha='right', va='center', transform=ax.transAxes)
+    
+    # Overlay the counts thresholds as vertical lines
+    ax.plot([upper_threshold, upper_threshold], [0, ax.get_ylim()[1]])
+    ax.plot([lower_threshold, lower_threshold], [0, ax.get_ylim()[1]])
+
+    # Save figure to file
+    fig.tight_layout()
+    plt.savefig(save_path + 'ribo_hist_' + library_id + '.png')
+    plt.show()
+    plt.close()
+
+    # Print the number of cell barcodes that will be retained 
+    print('Ribo-Filtering ' + library_id + ' (' + str(np.sum(ix)) + '/' + str(counts.shape[0]) + ' cells retained)')
     print()
 
     # If requested, return a filtered version of adata
@@ -386,6 +441,18 @@ def filter_scrublet(adata, filter_cells=False, threshold=5):
         adata = adata[~adata.obs['predicted_doublet'],:]
 
     return adata
+
+
+def get_sampling_stats(adata, groupby=[]):
+    lib_umi_per_cell = []
+    lib_genes_per_cell = []
+    for n, name in enumerate(groupby):
+      lib_umi_per_cell.append(np.mean(adata.obs['total_counts'][adata.obs['library_id']==name]))
+      lib_genes_per_cell.append(np.mean(adata.obs['n_genes_by_counts'][adata.obs['library_id']==name]))
+      
+    df = pd.DataFrame(data={'UMI per Cell': lib_umi_per_cell, 'Genes per Cell': lib_genes_per_cell}, index=libnames)
+    return df
+
 
 
 # VARIABLE GENES
