@@ -450,7 +450,7 @@ def get_sampling_stats(adata, groupby=[]):
       lib_umi_per_cell.append(np.mean(adata.obs['total_counts'][adata.obs['library_id']==name]))
       lib_genes_per_cell.append(np.mean(adata.obs['n_genes_by_counts'][adata.obs['library_id']==name]))
       
-    df = pd.DataFrame(data={'UMI per Cell': lib_umi_per_cell, 'Genes per Cell': lib_genes_per_cell}, index=libnames)
+    df = pd.DataFrame(data={'UMI per Cell': lib_umi_per_cell, 'Genes per Cell': lib_genes_per_cell}, index=groupby)
     return df
 
 
