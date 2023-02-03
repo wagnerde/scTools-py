@@ -237,7 +237,7 @@ def load_alevinfry(frydir, output_format="scRNA", nonzero=False, quiet=False):
             print("Output_format will be ignored.")
 
     # read the actual input matrix
-    af_raw = scanpy.read_mtx(os.path.sep.join([frydir, "alevin", "quants_mat.mtx"]))
+    af_raw = sc.read_mtx(os.path.sep.join([frydir, "alevin", "quants_mat.mtx"]))
     afg = [
         line.rstrip()
         for line in open(
@@ -261,7 +261,7 @@ def load_alevinfry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     # if we're not in USA mode, just combine this info into
     # an AnnData object
     if not usa_mode:
-        af = scanpy.AnnData(x.T, var=abc_df, obs=afg_df)
+        af = sc.AnnData(x.T, var=abc_df, obs=afg_df)
         af = af.T
 
     else:  # USA mode
@@ -272,7 +272,7 @@ def load_alevinfry(frydir, output_format="scRNA", nonzero=False, quiet=False):
         o = x[:, rd[xcounts[0]]]
         for wc in xcounts[1:]:
             o += x[:, rd[wc]]
-        af = scanpy.AnnData(o.T, var=abc_df, obs=afg_df)
+        af = sc.AnnData(o.T, var=abc_df, obs=afg_df)
         af = af.T
 
         # now, if there are other layers requested, populate those
