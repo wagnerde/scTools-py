@@ -1265,7 +1265,23 @@ def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes
     if return_axes:
         return ax
 
-  
+
+# DIFFERENTIAL EXPRESSION
+def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
+    
+    # Generate a tables of differentially expressed genes for each cluster
+    deg = adata.uns['rank_genes_groups']
+    groups = deg['names'].dtype.names
+
+    # Format a table with DEG names, log2 fold changes, corrected p-values, and export to csv
+    df_names_pvals = pd.DataFrame({groups+'_'+key: deg[key][groups] for groups in groups for key in ['names','logfoldchanges','pvals']}).head(ngenes_csv)
+    df_names_pvals.to_csv('DEGTable.csv')
+
+    # Print DEGs to screen
+    pd.options.display.max_columns = None
+    print(pd.DataFrame({groups : deg[key][groups] for groups in groups for key in ['names']}).head(ngenes_disp))
+
+
 # PLOTTING
 
 def px_umap3d(adata, color, plot_window_width=1000, plot_window_height=600, force_recalculate_umap=False):
@@ -1289,7 +1305,7 @@ def px_umap3d(adata, color, plot_window_width=1000, plot_window_height=600, forc
                     coloraxis_colorbar_title_text = 'log<br>counts', showlegend=True, coloraxis_colorbar_thickness=10, legend_title_text=' ')
     fig.update_traces(marker=dict(line=dict(width=0)))
     fig.show()
-    
+
     return adata
 
 def format_axes(eq_aspect='all', rm_colorbar=False):
