@@ -1269,17 +1269,25 @@ def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes
 # PLOTTING
 
 def px_umap3d(adata, color):
-  fig = px.scatter_3d(pd.DataFrame(adata.obsm['X_umap']), 
+  
+    if not 'X_umap_3d' in adata.obsm:
+        print('Generating obsm[\'X_umap_3d\']')
+        adata_temp = sc.tl.umap(adata, n_components=3, copy=True)
+        adata.obsm['X_umap_3d'] = adata_temp.obsm['X_umap']
+        
+    fig = px.scatter_3d(pd.DataFrame(adata.obsm['X_umap_3d']), 
                       x=0, y=1, z=2, 
                       size_max=8, size=np.repeat(1,len(adata)), 
                       opacity=1, color=sc.get.obs_df(adata, color, layer='raw').tolist(), 
                       color_discrete_sequence=px.colors.qualitative.D3, color_continuous_scale=px.colors.sequential.Viridis,
                       height=600, width=1200)
-  fig.update_layout(scene = dict(xaxis = dict(visible=False), yaxis = dict(visible=False), zaxis = dict(visible=False)), 
+    fig.update_layout(scene = dict(xaxis = dict(visible=False), yaxis = dict(visible=False), zaxis = dict(visible=False)), 
                     scene_dragmode='orbit', scene_camera = dict(eye=dict(x=0, y=0, z=1.5)), 
                     coloraxis_colorbar_title_text = 'log<br>counts', showlegend=True, coloraxis_colorbar_thickness=10, legend_title_text=' ')
-  fig.update_traces(marker=dict(line=dict(width=0)))
-  fig.show()
+    fig.update_traces(marker=dict(line=dict(width=0)))
+    fig.show()
+
+    return adata
 
 def format_axes(eq_aspect='all', rm_colorbar=False):
     '''
