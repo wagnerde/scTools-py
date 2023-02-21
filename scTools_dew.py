@@ -1282,7 +1282,7 @@ def px_umap3d(adata, color, plot_window_width=1000, plot_window_height=600, forc
                       x=0, y=1, z=2, 
                       size_max=8, size=np.repeat(1,len(adata)), 
                       opacity=1, color=sc.get.obs_df(adata, color, layer='raw').tolist(), 
-                      color_discrete_sequence=px.colors.qualitative.D3, color_continuous_scale=px.colors.sequential.Viridis,
+                      color_discrete_sequence=sc.pl.palettes.default_20, color_continuous_scale=px.colors.sequential.Viridis,
                       height=plot_window_height, width=plot_window_width)
     fig.update_layout(scene = dict(xaxis = dict(visible=False), yaxis = dict(visible=False), zaxis = dict(visible=False)), 
                     scene_dragmode='orbit', scene_camera = dict(eye=dict(x=0, y=0, z=1.5)), 
