@@ -1271,7 +1271,7 @@ def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes
 def px_umap3d(adata, color):
   
     if not 'X_umap_3d' in adata.obsm:
-        print('Generating obsm[\'X_umap_3d\']')
+        print('Calculating and storing adata.obsm[\'X_umap_3d\']')
         adata_temp = sc.tl.umap(adata, n_components=3, copy=True)
         adata.obsm['X_umap_3d'] = adata_temp.obsm['X_umap']
 
