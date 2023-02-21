@@ -1267,6 +1267,7 @@ def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes
 
 
 # DIFFERENTIAL EXPRESSION
+
 def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
     
     # Generate a tables of differentially expressed genes for each cluster
@@ -1279,7 +1280,9 @@ def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
 
     # Print DEGs to screen
     pd.options.display.max_columns = None
-    print(pd.DataFrame({groups : deg[key][groups] for groups in groups for key in ['names']}).head(ngenes_disp))
+    df = pd.DataFrame({groups : deg[key][groups] for groups in groups for key in ['names']}).head(ngenes_disp)
+
+    return df
 
 
 # PLOTTING
