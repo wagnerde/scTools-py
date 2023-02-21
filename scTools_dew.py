@@ -1274,6 +1274,9 @@ def px_umap3d(adata, color):
         print('Generating obsm[\'X_umap_3d\']')
         adata_temp = sc.tl.umap(adata, n_components=3, copy=True)
         adata.obsm['X_umap_3d'] = adata_temp.obsm['X_umap']
+
+    if color in adata.obs:
+        adata=adata[adata.obs.sort_values(by=color).index]
         
     fig = px.scatter_3d(pd.DataFrame(adata.obsm['X_umap_3d']), 
                       x=0, y=1, z=2, 
