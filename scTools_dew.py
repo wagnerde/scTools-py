@@ -1268,7 +1268,7 @@ def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes
   
 # PLOTTING
 
-def px_umap3d(adata, color):
+def px_umap3d(adata, color, plot_window_width=800, plot_window_height=600):
   
     if not 'X_umap_3d' in adata.obsm:
         print('Calculating and storing adata.obsm[\'X_umap_3d\']')
