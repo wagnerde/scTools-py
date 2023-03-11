@@ -1,20 +1,18 @@
-
-## IMPORT PACKAGES
    
-    import pickle
-    import os
-    import sys
-    import scipy.sparse
-    import scipy.stats
-    import sklearn
-    import numpy as np
-    import pandas as pd
-    import scanpy as sc
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import plotly.express as px
-    import warnings
-    import igraph as ig
+import pickle
+import os
+import sys
+import scipy.sparse
+import scipy.stats
+import sklearn
+import numpy as np
+import pandas as pd
+import scanpy as sc
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+import warnings
+import igraph as ig
 
 ## LOADING DATA
 
