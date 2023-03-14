@@ -1108,7 +1108,7 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
-def get_significant_pcs(adata, n_iter = 1, n_comps_test = 200):
+def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100):
 
     adata_tmp = sc.AnnData(adata[:,adata.var.highly_variable].X)
 
@@ -1122,7 +1122,7 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 200):
     data_rand = []
     nPCs_above_rand = []
     for j in range(n_iter):
-      print('Iteration', j)
+      print('Iteration', j+1, '/', n_iter)
       np.random.seed(seed=j)
       adata_tmp_rand = adata_tmp.copy()
       mat = adata_tmp_rand.X
@@ -1135,7 +1135,7 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 200):
       nPCs_above_rand.append(np.count_nonzero(data>np.max(data_rand_next)))
 
     # Plot eigenvalue histograms
-    bins = np.logspace(0, np.log10(np.max(data)+10), 100)
+    bins = np.logspace(0, np.log10(np.max(data)+10))
     plt.hist(data, bins, alpha=0.5, label='data', weights=np.zeros_like(data) + 1. / len(data))
     plt.hist(data_rand, bins, alpha=0.5, label='random', weights=np.zeros_like(data_rand) + 1. / len(data_rand))
     plt.legend(loc='upper right')
@@ -1162,34 +1162,33 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 200):
     plt.yscale('log')
     plt.xlabel('PC #')
     plt.ylabel('Eigenvalue')
-    #plt.legend('', frameon=False)
     plt.show()
 
     # Plot cumulative histogram
-    cumsum_data = np.cumsum(adata_tmp.uns['pca']['variance'] / sum(adata_tmp.uns['pca']['variance']))
-    cumsum_data_random = np.cumsum(adata_tmp_rand.uns['pca']['variance'] / sum(adata_tmp_rand.uns['pca']['variance']))
-    bin_heights = plt.plot(cumsum_data, alpha=1, label='data')
-    bin_heights = plt.plot(cumsum_data_random, alpha=1, label='random')
-    plt.legend(loc='upper right')
-    plt.axhline(y = 0.99, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-    plt.axhline(y = 0.95, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-    plt.axhline(y = 0.9, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-    plt.gca().set_ylim(top=1.1)
-    plt.xlabel('PC #')
-    plt.ylabel('Cumulative Total Variance')
-    #plt.legend('', frameon=False)
-    plt.legend(loc = 'lower right')
-    plt.show()
+    #cumsum_data = np.cumsum(adata_tmp.uns['pca']['variance'] / sum(adata_tmp.uns['pca']['variance']))
+    #cumsum_data_random = np.cumsum(adata_tmp_rand.uns['pca']['variance'] / sum(adata_tmp_rand.uns['pca']['variance']))
+    #bin_heights = plt.plot(cumsum_data, alpha=1, label='data')
+    #bin_heights = plt.plot(cumsum_data_random, alpha=1, label='random')
+    #plt.legend(loc='upper right')
+    #plt.axhline(y = 0.99, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    #plt.axhline(y = 0.95, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    #plt.axhline(y = 0.9, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    #plt.gca().set_ylim(top=1.1)
+    #plt.xlabel('PC #')
+    #plt.ylabel('Cumulative Total Variance')
+    ##plt.legend('', frameon=False)
+    #plt.legend(loc = 'lower right')
+    #plt.show()
 
     # Print summary stats to screen
     print('max random eigenvalue:', np.max(data_rand))
-    print('random eigenvalue 95th percentile:', np.percentile(data_rand,95))
     print('nPCs above rand for each iteration:', nPCs_above_rand)
-    print('nPCs above random in 95% trials:', np.count_nonzero(data>np.percentile(data_rand,95))) #np.percentile(nPCs_above_rand, 5))
-    print('nPCs above max random:', np.count_nonzero(data>np.max(data_rand)))
-    print('nPCs to reach 90% total variance:',np.count_nonzero(cumsum_data<0.9))
-    print('nPCs to reach 95% total variance:',np.count_nonzero(cumsum_data<0.95))
-    print('nPCs to reach 99% total variance:',np.count_nonzero(cumsum_data<0.99))
+    print('nPCs above random in >50% of trials:', round(np.percentile(nPCs_above_rand,50)))
+    print('nPCs above random in >95% of trials:', round(np.percentile(nPCs_above_rand,5)))
+    print('nPCs above random across all trials:', round(np.percentile(nPCs_above_rand,0)))
+    #print('nPCs to reach 90% total variance:',np.count_nonzero(cumsum_data<0.9))
+    #print('nPCs to reach 95% total variance:',np.count_nonzero(cumsum_data<0.95))
+    #print('nPCs to reach 99% total variance:',np.count_nonzero(cumsum_data<0.99))
 
 
 
@@ -1402,7 +1401,7 @@ def format_axes(eq_aspect='all', rm_colorbar=False):
     ax = plt.gcf().axes
 
     # format axes aspect ratio
-    if eq_aspect is not 'all':
+    if eq_aspect != 'all':
         for j in eq_aspect:
             ax[j].set_aspect('equal') 
     else:
