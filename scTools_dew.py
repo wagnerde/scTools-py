@@ -1072,6 +1072,19 @@ def plot_confusion_matrix(labels_A, labels_B,
     
     return fig, ax
 
+def plot_stacked_barplot(labels_A, labels_B, normalize='index', fig_width=4, fig_height=4):
+
+    # Cross-tabulate the two sets of labels
+    crstb = pd.crosstab(labels_A, labels_B, normalize=normalize)
+    
+    # Plot stacked bars
+    crstb.plot.bar(stacked=True, width=0.8, figsize=(fig_width, fig_height))
+    plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+    plt.ylim([0,1])
+    plt.ylabel('Proportion')
+    plt.grid(False)
+    plt.show()
+
 
 
 # PCA
@@ -1095,6 +1108,89 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
+def get_significant_pcs(adata, n_iter = 1, n_comps_test = 200):
+
+    adata_tmp = sc.AnnData(adata[:,adata.var.highly_variable].X)
+
+    # Get eigenvalues from data matrix
+    print('Performing PCA on data matrix')
+    sc.pp.pca(adata_tmp, n_comps=n_comps_test)
+    data = adata_tmp.uns['pca']['variance']
+
+    # Get eigenvalues from randomly permuted data matrices
+    print('Performing PCA on randomized data matrices')
+    data_rand = []
+    nPCs_above_rand = []
+    for j in range(n_iter):
+      print('Iteration', j)
+      np.random.seed(seed=j)
+      adata_tmp_rand = adata_tmp.copy()
+      mat = adata_tmp_rand.X
+      for c in range(mat.shape[1]):
+        mat[:,c] = mat[np.random.permutation(mat.shape[0]),c]
+      adata_tmp_rand.X = mat
+      sc.pp.pca(adata_tmp_rand, n_comps=n_comps_test)
+      data_rand_next = adata_tmp_rand.uns['pca']['variance']
+      data_rand.extend(data_rand_next.tolist())
+      nPCs_above_rand.append(np.count_nonzero(data>np.max(data_rand_next)))
+
+    # Plot eigenvalue histograms
+    bins = np.logspace(0, np.log10(np.max(data)+10), 100)
+    plt.hist(data, bins, alpha=0.5, label='data', weights=np.zeros_like(data) + 1. / len(data))
+    plt.hist(data_rand, bins, alpha=0.5, label='random', weights=np.zeros_like(data_rand) + 1. / len(data_rand))
+    plt.legend(loc='upper right')
+    plt.axvline(x = np.max(data_rand), color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlabel('Eigenvalue')
+    plt.ylabel('Frequency')
+    plt.show()
+
+    # Plot nPCs above rand histograms
+    sns.distplot(nPCs_above_rand, hist=True, kde=True, color = '#1f77b4', 
+                hist_kws={'edgecolor':'none'},
+                kde_kws={'linewidth': 1.5})
+    plt.xlabel('# PCs Above Random')
+    plt.ylabel('Frequency')
+    plt.show()
+
+    # Plot scree
+    plt.plot(adata_tmp.uns['pca']['variance'], alpha=1, label='data')
+    plt.plot(adata_tmp_rand.uns['pca']['variance'], alpha=1, label='random')
+    plt.legend(loc='upper right')
+    plt.axhline(y = np.max(data_rand), color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    plt.yscale('log')
+    plt.xlabel('PC #')
+    plt.ylabel('Eigenvalue')
+    #plt.legend('', frameon=False)
+    plt.show()
+
+    # Plot cumulative histogram
+    cumsum_data = np.cumsum(adata_tmp.uns['pca']['variance'] / sum(adata_tmp.uns['pca']['variance']))
+    cumsum_data_random = np.cumsum(adata_tmp_rand.uns['pca']['variance'] / sum(adata_tmp_rand.uns['pca']['variance']))
+    bin_heights = plt.plot(cumsum_data, alpha=1, label='data')
+    bin_heights = plt.plot(cumsum_data_random, alpha=1, label='random')
+    plt.legend(loc='upper right')
+    plt.axhline(y = 0.99, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    plt.axhline(y = 0.95, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    plt.axhline(y = 0.9, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    plt.gca().set_ylim(top=1.1)
+    plt.xlabel('PC #')
+    plt.ylabel('Cumulative Total Variance')
+    #plt.legend('', frameon=False)
+    plt.legend(loc = 'lower right')
+    plt.show()
+
+    # Print summary stats to screen
+    print('max random eigenvalue:', np.max(data_rand))
+    print('random eigenvalue 95th percentile:', np.percentile(data_rand,95))
+    print('nPCs above rand for each iteration:', nPCs_above_rand)
+    print('nPCs above random in 95% trials:', np.count_nonzero(data>np.percentile(data_rand,95))) #np.percentile(nPCs_above_rand, 5))
+    print('nPCs above max random:', np.count_nonzero(data>np.max(data_rand)))
+    print('nPCs to reach 90% total variance:',np.count_nonzero(cumsum_data<0.9))
+    print('nPCs to reach 95% total variance:',np.count_nonzero(cumsum_data<0.95))
+    print('nPCs to reach 99% total variance:',np.count_nonzero(cumsum_data<0.99))
+
 
 
 # TRAJECTORY ANALYSIS
@@ -1271,7 +1367,7 @@ def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
 
 # PLOTTING
 
-def px_umap3d(adata, color, plot_window_width=1000, plot_window_height=600, force_recalculate_umap=False):
+def plot_umap3d(adata, color, plot_window_width=1000, plot_window_height=600, force_recalculate_umap=False):
   
     if not 'X_umap_3d' in adata.obsm or force_recalculate_umap:
         print('Calculating and storing adata.obsm[\'X_umap_3d\']')
