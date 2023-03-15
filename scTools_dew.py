@@ -1108,7 +1108,7 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
-def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100):
+def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method='95'):
 
     adata_tmp = sc.AnnData(adata[:,adata.var.highly_variable].X)
 
@@ -1120,26 +1120,42 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100):
     # Get eigenvalues from randomly permuted data matrices
     print('Performing PCA on randomized data matrices')
     data_rand = []
+    data_rand_max = []
     nPCs_above_rand = []
     for j in range(n_iter):
-      print('Iteration', j+1, '/', n_iter)
-      np.random.seed(seed=j)
-      adata_tmp_rand = adata_tmp.copy()
-      mat = adata_tmp_rand.X
-      for c in range(mat.shape[1]):
-        mat[:,c] = mat[np.random.permutation(mat.shape[0]),c]
-      adata_tmp_rand.X = mat
-      sc.pp.pca(adata_tmp_rand, n_comps=n_comps_test)
-      data_rand_next = adata_tmp_rand.uns['pca']['variance']
-      data_rand.extend(data_rand_next.tolist())
-      nPCs_above_rand.append(np.count_nonzero(data>np.max(data_rand_next)))
+        print('Iteration', j+1, '/', n_iter)
+        np.random.seed(seed=j)
+        adata_tmp_rand = adata_tmp.copy()
+        mat = adata_tmp_rand.X
+        for c in range(mat.shape[1]):
+            mat[:,c] = mat[np.random.permutation(mat.shape[0]),c]
+        adata_tmp_rand.X = mat
+        sc.pp.pca(adata_tmp_rand, n_comps=n_comps_test)
+        data_rand_next = adata_tmp_rand.uns['pca']['variance']
+        data_rand.extend(data_rand_next.tolist())
+        data_rand_max.append(np.max(data_rand_next))
+        nPCs_above_rand.append(np.count_nonzero(data>np.max(data_rand_next)))
+
+    # Set eigenvalue thresholding method
+    if threshold_method == '95':
+        method_string = 'Keeping nPCs with eigenvalues above random in >95% of trials'
+        thresh = np.percentile(data_rand_max,95)
+    elif threshold_method == 'median':
+        method_string = 'Keeping nPCs with eigenvalues above random in >50% of trials'
+        thresh = np.percentile(data_rand_max,50)
+    elif threshold_method == 'all':
+        method_string = 'Keeping nPCs with eigenvalues above random across all trials'
+        thresh = np.percentile(data_rand_max,100)
+    
+    # Determine # of PCs with eigenvalues above threshold
+    n_sig_PCs = np.count_nonzero(data>thresh)    
 
     # Plot eigenvalue histograms
     bins = np.logspace(0, np.log10(np.max(data)+10))
     plt.hist(data, bins, alpha=0.5, label='data', weights=np.zeros_like(data) + 1. / len(data))
     plt.hist(data_rand, bins, alpha=0.5, label='random', weights=np.zeros_like(data_rand) + 1. / len(data_rand))
     plt.legend(loc='upper right')
-    plt.axvline(x = np.max(data_rand), color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    plt.axvline(x = thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
     plt.xscale('log')
     plt.yscale('log')
     plt.xlabel('Eigenvalue')
@@ -1158,7 +1174,7 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100):
     plt.plot(adata_tmp.uns['pca']['variance'], alpha=1, label='data')
     plt.plot(adata_tmp_rand.uns['pca']['variance'], alpha=1, label='random')
     plt.legend(loc='upper right')
-    plt.axhline(y = np.max(data_rand), color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+    plt.axhline(y = thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
     plt.yscale('log')
     plt.xlabel('PC #')
     plt.ylabel('Eigenvalue')
@@ -1182,15 +1198,12 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100):
 
     # Print summary stats to screen
     print('max random eigenvalue:', np.max(data_rand))
-    print('nPCs above rand for each iteration:', nPCs_above_rand)
-    print('nPCs above random in >50% of trials:', round(np.percentile(nPCs_above_rand,50)))
-    print('nPCs above random in >95% of trials:', round(np.percentile(nPCs_above_rand,5)))
-    print('nPCs above random across all trials:', round(np.percentile(nPCs_above_rand,0)))
-    #print('nPCs to reach 90% total variance:',np.count_nonzero(cumsum_data<0.9))
-    #print('nPCs to reach 95% total variance:',np.count_nonzero(cumsum_data<0.95))
-    #print('nPCs to reach 99% total variance:',np.count_nonzero(cumsum_data<0.99))
 
+    print(method_string)
+    print('Eigenvalue Threshold', thresh)
+    print('# Significant PCs:', n_sig_PCs)
 
+    return n_sig_PCs
 
 # TRAJECTORY ANALYSIS
 
