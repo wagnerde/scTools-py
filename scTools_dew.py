@@ -1163,11 +1163,14 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
     plt.show()
 
     # Plot nPCs above rand histograms
-    sns.distplot(nPCs_above_rand, hist=True, kde=True, color = '#1f77b4', 
-                hist_kws={'edgecolor':'none'},
-                kde_kws={'linewidth': 1.5})
+    sns.set_context(rc = {'patch.linewidth': 0.0})
+    sns.histplot(nPCs_above_rand, kde=True, color='#1f77b4', binwidth=0.8) 
+                #hist=True
+                #hist_kws={'edgecolor':'none'},
+                #kde_kws={'linewidth': 1.5})
     plt.xlabel('# PCs Above Random')
     plt.ylabel('Frequency')
+    plt.xlim([0, n_comps_test])
     plt.show()
 
     # Plot scree
