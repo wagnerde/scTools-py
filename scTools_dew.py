@@ -1200,8 +1200,6 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
     #plt.show()
 
     # Print summary stats to screen
-    print('max random eigenvalue:', np.max(data_rand))
-
     print(method_string)
     print('Eigenvalue Threshold', thresh)
     print('# Significant PCs:', n_sig_PCs)
