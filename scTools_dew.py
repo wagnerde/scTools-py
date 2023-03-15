@@ -1155,7 +1155,7 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
     if show_plots: 
 
         # Plot eigenvalue histograms
-        bins = np.logspace(0, np.log10(np.max(data)+10), np.round(n_comps_test))
+        bins = np.logspace(0, np.log10(np.max(data)+10), 50)
         sns.histplot(data_rand, bins=bins, kde=False, alpha=1, label='random', stat='probability', color='orange')#, weights=np.zeros_like(data_rand) + 1. / len(data_rand))
         sns.histplot(data, bins=bins, kde=False, alpha=0.5, label='data', stat='probability')#, weights=np.zeros_like(data) + 1. / len(data))
         plt.legend(loc='upper right')
