@@ -1109,7 +1109,7 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
-def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method='95'):
+def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method='95', show_plots=True):
 
     adata_tmp = sc.AnnData(adata[:,adata.var.highly_variable].X)
 
@@ -1152,51 +1152,53 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
     # Determine # of PCs with eigenvalues above threshold
     n_sig_PCs = np.count_nonzero(data>thresh)    
 
-    # Plot eigenvalue histograms
-    bins = np.logspace(0, np.log10(np.max(data)+10), n_comps_test)
-    sns.histplot(data_rand, bins=bins, kde=False, alpha=1, label='random', stat='probability', color='orange')#, weights=np.zeros_like(data_rand) + 1. / len(data_rand))
-    sns.histplot(data, bins=bins, kde=False, alpha=0.5, label='data', stat='probability')#, weights=np.zeros_like(data) + 1. / len(data))
-    plt.legend(loc='upper right')
-    plt.axvline(x = thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-    plt.xscale('log')
-    #plt.yscale('log')
-    plt.xlabel('Eigenvalue')
-    plt.ylabel('Frequency')
-    plt.show()
+    if show_plots: 
 
-    # Plot nPCs above rand histograms
-    sns.set_context(rc = {'patch.linewidth': 0.0})
-    sns.histplot(nPCs_above_rand, kde=True, stat='probability', color='#1f77b4', binwidth=0.8) 
-    plt.xlabel('# PCs Above Random')
-    plt.ylabel('Frequency')
-    plt.xlim([0, n_comps_test])
-    plt.show()
+        # Plot eigenvalue histograms
+        bins = np.logspace(0, np.log10(np.max(data)+10), n_comps_test)
+        sns.histplot(data_rand, bins=bins, kde=False, alpha=1, label='random', stat='probability', color='orange')#, weights=np.zeros_like(data_rand) + 1. / len(data_rand))
+        sns.histplot(data, bins=bins, kde=False, alpha=0.5, label='data', stat='probability')#, weights=np.zeros_like(data) + 1. / len(data))
+        plt.legend(loc='upper right')
+        plt.axvline(x = thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+        plt.xscale('log')
+        #plt.yscale('log')
+        plt.xlabel('Eigenvalue')
+        plt.ylabel('Frequency')
+        plt.show()
 
-    # Plot scree
-    plt.plot(adata_tmp.uns['pca']['variance'], alpha=1, label='data')
-    plt.plot(adata_tmp_rand.uns['pca']['variance'], alpha=1, label='random')
-    plt.legend(loc='upper right')
-    plt.axhline(y = thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-    plt.yscale('log')
-    plt.xlabel('PC #')
-    plt.ylabel('Eigenvalue')
-    plt.show()
+        # Plot nPCs above rand histograms
+        sns.set_context(rc = {'patch.linewidth': 0.0})
+        sns.histplot(nPCs_above_rand, kde=True, stat='probability', color='#1f77b4', binwidth=0.8) 
+        plt.xlabel('# PCs Above Random')
+        plt.ylabel('Frequency')
+        plt.xlim([0, n_comps_test])
+        plt.show()
 
-    # Plot cumulative histogram
-    #cumsum_data = np.cumsum(adata_tmp.uns['pca']['variance'] / sum(adata_tmp.uns['pca']['variance']))
-    #cumsum_data_random = np.cumsum(adata_tmp_rand.uns['pca']['variance'] / sum(adata_tmp_rand.uns['pca']['variance']))
-    #bin_heights = plt.plot(cumsum_data, alpha=1, label='data')
-    #bin_heights = plt.plot(cumsum_data_random, alpha=1, label='random')
-    #plt.legend(loc='upper right')
-    #plt.axhline(y = 0.99, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-    #plt.axhline(y = 0.95, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-    #plt.axhline(y = 0.9, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-    #plt.gca().set_ylim(top=1.1)
-    #plt.xlabel('PC #')
-    #plt.ylabel('Cumulative Total Variance')
-    ##plt.legend('', frameon=False)
-    #plt.legend(loc = 'lower right')
-    #plt.show()
+        # Plot scree
+        plt.plot(adata_tmp.uns['pca']['variance'], alpha=1, label='data')
+        plt.plot(adata_tmp_rand.uns['pca']['variance'], alpha=1, label='random')
+        plt.legend(loc='upper right')
+        plt.axhline(y = thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+        plt.yscale('log')
+        plt.xlabel('PC #')
+        plt.ylabel('Eigenvalue')
+        plt.show()
+
+        # Plot cumulative histogram
+        #cumsum_data = np.cumsum(adata_tmp.uns['pca']['variance'] / sum(adata_tmp.uns['pca']['variance']))
+        #cumsum_data_random = np.cumsum(adata_tmp_rand.uns['pca']['variance'] / sum(adata_tmp_rand.uns['pca']['variance']))
+        #bin_heights = plt.plot(cumsum_data, alpha=1, label='data')
+        #bin_heights = plt.plot(cumsum_data_random, alpha=1, label='random')
+        #plt.legend(loc='upper right')
+        #plt.axhline(y = 0.99, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+        #plt.axhline(y = 0.95, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+        #plt.axhline(y = 0.9, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+        #plt.gca().set_ylim(top=1.1)
+        #plt.xlabel('PC #')
+        #plt.ylabel('Cumulative Total Variance')
+        ##plt.legend('', frameon=False)
+        #plt.legend(loc = 'lower right')
+        #plt.show()
 
     # Print summary stats to screen
     print(method_string)
