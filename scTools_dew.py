@@ -1123,7 +1123,7 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
     data_rand_max = []
     nPCs_above_rand = []
     for j in range(n_iter):
-        print('Iteration', j+1, '/', n_iter)
+        print('Iteration', j+1, '/', n_iter, end='\r')
         np.random.seed(seed=j)
         adata_tmp_rand = adata_tmp.copy()
         mat = adata_tmp_rand.X
@@ -1201,8 +1201,8 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
 
     # Print summary stats to screen
     print(method_string)
-    print('Eigenvalue Threshold', thresh)
-    print('# Significant PCs:', n_sig_PCs)
+    print('Eigenvalue Threshold =', np.round(thresh, 2))
+    print('# Significant PCs =', n_sig_PCs)
 
     return n_sig_PCs
 
