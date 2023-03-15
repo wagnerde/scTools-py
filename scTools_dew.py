@@ -1140,36 +1140,33 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
 
     # Set eigenvalue thresholding method
     if threshold_method == '95':
-        method_string = 'Keeping nPCs with eigenvalues above random in >95% of trials'
+        method_string = 'Counting the # of PCs with eigenvalues above random in >95% of trials'
         thresh = np.percentile(data_rand_max,95)
     elif threshold_method == 'median':
-        method_string = 'Keeping nPCs with eigenvalues above random in >50% of trials'
+        method_string = 'Counting the # of PCs with eigenvalues above random in >50% of trials'
         thresh = np.percentile(data_rand_max,50)
     elif threshold_method == 'all':
-        method_string = 'Keeping nPCs with eigenvalues above random across all trials'
+        method_string = 'Counting the # of PCs with eigenvalues above random across all trials'
         thresh = np.percentile(data_rand_max,100)
     
     # Determine # of PCs with eigenvalues above threshold
     n_sig_PCs = np.count_nonzero(data>thresh)    
 
     # Plot eigenvalue histograms
-    bins = np.logspace(0, np.log10(np.max(data)+10))
-    plt.hist(data, bins, alpha=0.5, label='data', weights=np.zeros_like(data) + 1. / len(data))
-    plt.hist(data_rand, bins, alpha=0.5, label='random', weights=np.zeros_like(data_rand) + 1. / len(data_rand))
+    bins = np.logspace(0, np.log10(np.max(data)+10), n_comps_test)
+    sns.histplot(data_rand, bins=bins, kde=False, alpha=1, label='random', stat='probability', color='orange')#, weights=np.zeros_like(data_rand) + 1. / len(data_rand))
+    sns.histplot(data, bins=bins, kde=False, alpha=0.5, label='data', stat='probability')#, weights=np.zeros_like(data) + 1. / len(data))
     plt.legend(loc='upper right')
     plt.axvline(x = thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
     plt.xscale('log')
-    plt.yscale('log')
+    #plt.yscale('log')
     plt.xlabel('Eigenvalue')
     plt.ylabel('Frequency')
     plt.show()
 
     # Plot nPCs above rand histograms
     sns.set_context(rc = {'patch.linewidth': 0.0})
-    sns.histplot(nPCs_above_rand, kde=True, color='#1f77b4', binwidth=0.8) 
-                #hist=True
-                #hist_kws={'edgecolor':'none'},
-                #kde_kws={'linewidth': 1.5})
+    sns.histplot(nPCs_above_rand, kde=True, stat='probability', color='#1f77b4', binwidth=0.8) 
     plt.xlabel('# PCs Above Random')
     plt.ylabel('Frequency')
     plt.xlim([0, n_comps_test])
@@ -1206,7 +1203,9 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
     print('Eigenvalue Threshold =', np.round(thresh, 2))
     print('# Significant PCs =', n_sig_PCs)
 
-    return n_sig_PCs
+    adata.uns['n_sig_PCs'] = n_sig_PCs
+
+    return adata
 
 
 
