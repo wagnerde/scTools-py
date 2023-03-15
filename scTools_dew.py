@@ -12,6 +12,7 @@ import seaborn as sns
 import plotly.express as px
 import warnings
 import igraph as ig
+import time
 
 
 
@@ -1123,7 +1124,8 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
     data_rand_max = []
     nPCs_above_rand = []
     for j in range(n_iter):
-        print('Iteration', j+1, '/', n_iter, end='\r')
+        sys.stdout.write('\rIteration %i / %i' % (j, n_iter)); sys.stdout.flush()
+        #print('Iteration', j+1, '/', n_iter, end='\r')
         np.random.seed(seed=j)
         adata_tmp_rand = adata_tmp.copy()
         mat = adata_tmp_rand.X
@@ -1205,6 +1207,8 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
     print('# Significant PCs =', n_sig_PCs)
 
     return n_sig_PCs
+
+
 
 # TRAJECTORY ANALYSIS
 
