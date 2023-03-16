@@ -1109,7 +1109,7 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
-def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method='95', show_plots=True):
+def get_significant_pcs(adata, n_iter = 3, n_comps_test = 100, threshold_method='95', show_plots=True):
 
     adata_tmp = sc.AnnData(adata[:,adata.var.highly_variable].X)
 
@@ -1168,7 +1168,7 @@ def get_significant_pcs(adata, n_iter = 1, n_comps_test = 100, threshold_method=
 
         # Plot nPCs above rand histograms
         sns.set_context(rc = {'patch.linewidth': 0.0})
-        sns.histplot(nPCs_above_rand, kde=True, stat='probability', color='#1f77b4', binwidth=0.8) 
+        sns.histplot(nPCs_above_rand, kde=True, stat='probability', color='#1f77b4') 
         plt.xlabel('# PCs Above Random')
         plt.ylabel('Frequency')
         plt.xlim([0, n_comps_test])
