@@ -1071,7 +1071,6 @@ def plot_confusion_matrix(labels_A, labels_B,
                         size=8)
     ax.set_aspect('equal') 
     
-    return fig, ax
 
 def plot_stacked_barplot(labels_A, labels_B, normalize='index', fig_width=4, fig_height=4):
 
