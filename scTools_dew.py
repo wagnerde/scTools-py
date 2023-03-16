@@ -1109,7 +1109,7 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
-def get_significant_pcs(adata, n_iter = 3, n_comps_test = 100, threshold_method='95', show_plots=True):
+def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method='95', show_plots=True):
 
     adata_tmp = sc.AnnData(adata[:,adata.var.highly_variable].X)
 
