@@ -1399,14 +1399,11 @@ def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
 
 # PLOTTING
 
-def plot_umap3d(adata, color, plot_window_width=800, plot_window_height=600, force_recalculate_umap=False):
+def plot_umap3d(adata, color, plot_window_width=800, plot_window_height=1000):
   
     if 'X_umap' in adata.obsm:
         del adata.obsm['X_umap']
     
-    #if color in adata.obs:
-    #    adata = adata[adata.obs.sort_values(by=color).index]
-  
     # Generate and plot a interactive 3D scatterplot using Plotly Express    
     sc.tl.umap(adata, n_components=3)
   
