@@ -57,7 +57,7 @@ def load_alevin(library_ids, input_path):
 def load_alevinfry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     """
     This function is forked from: https://github.com/COMBINE-lab/pyroe
-    load alevin-fry quantification result into an AnnData object
+    Loads alevin-fry quantification results into an AnnData object
     Required Parameters
     ----------
     frydir : `str`
@@ -995,25 +995,29 @@ def predict_classes(adata, Classifier):
 def plot_confusion_matrix(labels_A, labels_B,
                           normalize=True,
                           title=None,
+                          reorder_columns=True,
+                          reorder_rows=True,
                           cmap=plt.cm.Blues,
                           overlay_values=False,
                           vmin=None,
-                          vmax=None):
+                          vmax=None,
+                          figsize=4):
     '''
     Plots a confusion matrix comparing two sets labels. 
     '''
 
-    # Compute confusion matrix; 
+    # Get all the unique values for each set of labels
+    labels_A_unique = np.unique(labels_A)
+    labels_B_unique = np.unique(labels_B)
+
+    # Compute confusion matrix 
     cm = sklearn.metrics.confusion_matrix(labels_A, labels_B)
     non_empty_rows = cm.sum(axis=0)!=0
     non_empty_cols = cm.sum(axis=1)!=0
     cm = cm[:,non_empty_rows]
     cm = cm[non_empty_cols,:]
     cm = cm.T
-
-    # Classes are the unique labels
-    classes = np.unique(labels_A.append(labels_B))
-
+    
     # Normalize by rows (label B)
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -1028,38 +1032,48 @@ def plot_confusion_matrix(labels_A, labels_B,
         if not title:
             title = 'Confusion matrix, without normalization'  
   
+    # If available, get the label category names for plotting
     if hasattr(labels_A, 'name'):
-        labels_A_name = labels_A.name #.capitalize()    
+        labels_A_name = labels_A.name 
     else:
         labels_A_name = 'Label A'
     if hasattr(labels_B, 'name'):
-        labels_B_name = labels_B.name #.capitalize()        
+        labels_B_name = labels_B.name 
     else:
         labels_B_name = 'Label B'
 
+    # If requested, reorder the rows and columns by best match
+    if reorder_columns:
+        top_match = np.argmax(cm, axis=0)
+        reorder_columns = np.argsort(top_match)
+        cm=cm[:,reorder_columns]
+        labels_A_unique = labels_A_unique[reorder_columns]
+
+    if reorder_rows:
+        top_match = np.argmax(cm, axis=1)
+        reorder_rows = np.argsort(top_match)
+        cm=cm[reorder_rows,:]
+        labels_B_unique = labels_B_unique[reorder_rows]
+
     # Generate and format figure axes
-    fig, ax = plt.subplots()
-    im = ax.imshow(cm, interpolation='nearest', cmap=cmap, vmin=vmin, vmax=vmax)
-
-    ax.grid(False)
-    ax.set(xticks=np.arange(cm.shape[1]),
-           yticks=np.arange(cm.shape[0]),
-           xticklabels=classes[non_empty_cols], yticklabels=classes[non_empty_rows],
-           title=title,
-           ylabel=labels_B_name,
-           xlabel=labels_A_name)
-
-    # Format tick labels
-    plt.setp(ax.get_xticklabels(), rotation=90, ha="right", va='top',
-             rotation_mode='anchor',fontsize=10)
-    plt.setp(ax.get_yticklabels(), fontsize=10)
+    plt.rcParams['axes.grid'] = False
+    fig, ax = plt.subplots(figsize=(figsize,figsize))
+    im = plt.imshow(cm, interpolation='nearest', cmap=cmap, vmin=vmin, vmax=vmax)
+    ax.set_aspect('equal') 
+    ax.set_xticks(np.arange(cm.shape[1]))
+    ax.set_yticks(np.arange(cm.shape[0]))
+    ax.set_title(title)
+    ax.set_ylabel(labels_B_name)
+    ax.set_xlabel(labels_A_name)
+    ax.set_xticklabels(labels_A_unique, rotation=90, ha='center', minor=False)
+    ax.set_yticklabels(labels_B_unique)
 
     # Format colorbar
     cb=ax.figure.colorbar(im, ax=ax, shrink=0.5)
-    cb.ax.tick_params(labelsize=10) 
+    #cb.ax.tick_params(labelsize=10) 
     cb.ax.set_ylabel(colorbar_label, rotation=90)
-    
-    # Loop over data dimensions and create text annotations
+
+    # If requested, loop over data dimensions and create text annotations
     if overlay_values:
         fmt = '.1f' if normalize else 'd'
         thresh = cm.max() / 2.
@@ -1069,10 +1083,12 @@ def plot_confusion_matrix(labels_A, labels_B,
                         ha="center", va="center",
                         color="white" if cm[i, j] > thresh else "black",
                         size=8)
-    ax.set_aspect('equal') 
     
-
-def plot_stacked_barplot(labels_A, labels_B, normalize='index', fig_width=4, fig_height=4):
+def plot_stacked_barplot(labels_A, 
+                         labels_B, 
+                         normalize='index', 
+                         fig_width=4, 
+                         fig_height=4):
 
     # Cross-tabulate the two sets of labels
     crstb = pd.crosstab(labels_A, labels_B, normalize=normalize)
@@ -1388,12 +1404,20 @@ def plot_umap3d(adata, color, plot_window_width=1000, plot_window_height=600, fo
   
     if not 'X_umap_3d' in adata.obsm or force_recalculate_umap:
         print('Calculating and storing adata.obsm[\'X_umap_3d\']')
-        adata_temp = sc.tl.umap(adata, n_components=3, copy=True)
-        adata.obsm['X_umap_3d'] = adata_temp.obsm['X_umap']
+        # if a previous Umap has already been calculated, prevent it from being overwritten
+        if 'X_umap' in adata.obsm: 
+            tmp = adata.obsm['X_umap']
+            sc.tl.umap(adata, n_components=3)
+            adata.obsm['X_umap_3d'] = adata.obsm['X_umap']
+            adata.obsm['X_umap'] = tmp
+        else:
+            sc.tl.umap(adata, n_components=3)
+            adata.obsm['X_umap_3d'] = adata.obsm['X_umap']
 
     if color in adata.obs:
         adata=adata[adata.obs.sort_values(by=color).index]
-        
+    
+    # Generate an interactive 3D scatterplot using Plotly Express    
     fig = px.scatter_3d(pd.DataFrame(adata.obsm['X_umap_3d']), 
                       x=0, y=1, z=2, 
                       size_max=8, size=np.repeat(1,len(adata)), 
