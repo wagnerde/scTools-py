@@ -12,7 +12,6 @@ import seaborn as sns
 import plotly.express as px
 import warnings
 import igraph as ig
-import time
 
 
 
@@ -1404,7 +1403,9 @@ def plot_umap3d(adata, color, plot_window_width=1000, plot_window_height=600, fo
   
     if not 'X_umap_3d' in adata.obsm or force_recalculate_umap:
         print('Calculating and storing adata.obsm[\'X_umap_3d\']')
-        # if a previous Umap has already been calculated, prevent it from being overwritten
+        
+        # if a previous X_umap embedding (e.g. a 2D version) has already been calculated, 
+        # then prevent it from being overwritten
         if 'X_umap' in adata.obsm: 
             tmp = adata.obsm['X_umap']
             sc.tl.umap(adata, n_components=3)
