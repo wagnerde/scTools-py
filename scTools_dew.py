@@ -1399,7 +1399,7 @@ def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
 
 # PLOTTING
 
-def plot_umap3d(adata, color, plot_window_width=800, plot_window_height=1000):
+def plot_umap3d(adata, color):
   
     if 'X_umap' in adata.obsm:
         del adata.obsm['X_umap']
@@ -1411,8 +1411,8 @@ def plot_umap3d(adata, color, plot_window_width=800, plot_window_height=1000):
                       x=0, y=1, z=2, 
                       size_max=8, size=np.repeat(1,len(adata)), 
                       opacity=1, color=sc.get.obs_df(adata, color, layer='raw').tolist(), 
-                      color_discrete_sequence=sc.pl.palettes.default_20, color_continuous_scale=px.colors.sequential.Viridis,
-                      height=plot_window_height, width=plot_window_width)
+                      color_discrete_sequence=sc.pl.palettes.default_20, color_continuous_scale=px.colors.sequential.Viridis)#,
+                      #height=plot_window_height, width=plot_window_width)
   
     fig.update_layout(scene = dict(xaxis = dict(visible=False), yaxis = dict(visible=False), zaxis = dict(visible=False)), 
                     scene_dragmode='orbit', scene_camera = dict(eye=dict(x=0, y=0, z=1.5)), 
