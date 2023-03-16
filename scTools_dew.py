@@ -1401,19 +1401,10 @@ def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
 
 def plot_umap3d(adata, color, plot_window_width=1000, plot_window_height=600, force_recalculate_umap=False):
   
-    if not 'X_umap_3d' in adata.obsm or force_recalculate_umap:
-        print('Calculating and storing adata.obsm[\'X_umap_3d\']')
-        
-        # if a previous X_umap embedding (e.g. a 2D version) has already been calculated, 
-        # then prevent it from being overwritten
-        if 'X_umap' in adata.obsm: 
-            tmp = adata.obsm['X_umap']
-            sc.tl.umap(adata, n_components=3)
-            adata.obsm['X_umap_3d'] = adata.obsm['X_umap']
-            adata.obsm['X_umap'] = tmp
-        else:
-            sc.tl.umap(adata, n_components=3)
-            adata.obsm['X_umap_3d'] = adata.obsm['X_umap']
+    if 'X_umap' in adata.obsm:
+        del adata.obsm['X_umap']
+    
+    sc.tl.umap(adata, n_components=3)
 
     if color in adata.obs:
         adata=adata[adata.obs.sort_values(by=color).index]
@@ -1431,7 +1422,6 @@ def plot_umap3d(adata, color, plot_window_width=1000, plot_window_height=600, fo
     fig.update_traces(marker=dict(line=dict(width=0)))
     fig.show()
 
-    return adata
 
 def format_axes(eq_aspect='all', rm_colorbar=False):
     '''
