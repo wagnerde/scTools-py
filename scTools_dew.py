@@ -1166,14 +1166,6 @@ def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method=
         plt.ylabel('Frequency')
         plt.show()
 
-        # Plot nPCs above rand histograms
-        sns.set_context(rc = {'patch.linewidth': 0.0})
-        sns.histplot(nPCs_above_rand, kde=True, stat='probability', color='#1f77b4') 
-        plt.xlabel('# PCs Above Random')
-        plt.ylabel('Frequency')
-        plt.xlim([0, n_comps_test])
-        plt.show()
-
         # Plot scree
         plt.plot(adata_tmp.uns['pca']['variance'], alpha=1, label='data')
         plt.plot(adata_tmp_rand.uns['pca']['variance'], alpha=1, label='random')
@@ -1183,6 +1175,14 @@ def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method=
         plt.xlabel('PC #')
         plt.ylabel('Eigenvalue')
         plt.show()
+
+        # Plot nPCs above rand histograms
+        #sns.set_context(rc = {'patch.linewidth': 0.0})
+        #sns.histplot(nPCs_above_rand, kde=True, stat='probability', color='#1f77b4') 
+        #plt.xlabel('# PCs Above Random')
+        #plt.ylabel('Frequency')
+        #plt.xlim([0, n_comps_test])
+        #plt.show()
 
         # Plot cumulative histogram
         #cumsum_data = np.cumsum(adata_tmp.uns['pca']['variance'] / sum(adata_tmp.uns['pca']['variance']))
