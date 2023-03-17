@@ -1401,13 +1401,15 @@ def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
 
 def plot_umap3d(adata, color):
   
+    # Generate 3D UMAP and store coordinates in obsm; preserve 2D coordinates if they exist
     if 'X_umap' in adata.obsm:
-        del adata.obsm['X_umap']
-    
-    # Generate and plot a interactive 3D scatterplot using Plotly Express    
+        tmp = adata.obsm['X_umap'].copy()
     sc.tl.umap(adata, n_components=3)
+    adata.obsm['X_umap_3d'] = adata.obsm['X_umap']
+    adata.obsm['X_umap']=tmp
   
-    fig = px.scatter_3d(pd.DataFrame(adata.obsm['X_umap']), 
+    # Generate the plot using Plotly express
+    fig = px.scatter_3d(pd.DataFrame(adata.obsm['X_umap_3d']), 
                       x=0, y=1, z=2, 
                       size_max=8, size=np.repeat(1,len(adata)), 
                       opacity=1, color=sc.get.obs_df(adata, color, layer='raw').tolist(), 
@@ -1421,7 +1423,6 @@ def plot_umap3d(adata, color):
     fig.update_traces(marker=dict(line=dict(width=0)))
   
     fig.show()
-
 
 def format_axes(eq_aspect='all', rm_colorbar=False):
     '''
