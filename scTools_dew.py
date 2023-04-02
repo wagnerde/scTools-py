@@ -678,14 +678,22 @@ def filter_scrublet(adata, filter_cells=False, threshold=5):
 
     return adata
 
-def get_sampling_stats(adata, groupby=[]):
+
+def get_sampling_stats(adata, groupby=''):
+
+    groups = np.unique(adata.obs[groupby])
+
+    if not set(['total_counts','n_genes_by_counts']).issubset(adata.obs.columns):
+        'Calculating QC metrics'
+        sc.pp.calculate_qc_metrics(adata, inplace=True)
+    
     lib_umi_per_cell = []
     lib_genes_per_cell = []
-    for n, name in enumerate(groupby):
-      lib_umi_per_cell.append(np.mean(adata.obs['total_counts'][adata.obs['library_id']==name]))
-      lib_genes_per_cell.append(np.mean(adata.obs['n_genes_by_counts'][adata.obs['library_id']==name]))
+    for group in groups:
+      lib_umi_per_cell.append(np.mean(adata.obs['total_counts'][adata.obs[groupby]==group]))
+      lib_genes_per_cell.append(np.mean(adata.obs['n_genes_by_counts'][adata.obs[groupby]==group]))
       
-    df = pd.DataFrame(data={'UMI per Cell': lib_umi_per_cell, 'Genes per Cell': lib_genes_per_cell}, index=groupby)
+    df = pd.DataFrame(data={'UMI per Cell': lib_umi_per_cell, 'Genes per Cell': lib_genes_per_cell}, index=groups)
     return df
 
 
