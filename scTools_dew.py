@@ -20,8 +20,8 @@ import igraph as ig
 def load_starsolo(library_ids, input_path):
   '''
   Builds a library of AnnData objects from STARsolo output folders
-  Expects both 'Gene' and 'Velocyto' output folders
-  Loads each Velocyto/USA category into a separate layer
+  Expects both 'Gene' and 'Velocyto' outputs
+  Loads each Velocyto/USA category into a separate adata layer
   Loads unfiltered/raw counts
 
   '''
@@ -1226,12 +1226,12 @@ def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method=
         plt.show()
 
         # Plot nPCs above rand histograms
-        #sns.set_context(rc = {'patch.linewidth': 0.0})
-        #sns.histplot(nPCs_above_rand, kde=True, stat='probability', color='#1f77b4') 
-        #plt.xlabel('# PCs Above Random')
-        #plt.ylabel('Frequency')
-        #plt.xlim([0, n_comps_test])
-        #plt.show()
+        sns.set_context(rc = {'patch.linewidth': 0.0})
+        sns.histplot(nPCs_above_rand, kde=True, stat='probability', color='#1f77b4') 
+        plt.xlabel('# PCs Above Random')
+        plt.ylabel('Frequency')
+        plt.xlim([0, n_comps_test])
+        plt.show()
 
         # Plot cumulative histogram
         #cumsum_data = np.cumsum(adata_tmp.uns['pca']['variance'] / sum(adata_tmp.uns['pca']['variance']))
