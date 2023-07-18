@@ -17,6 +17,32 @@ import igraph as ig
 
 # LOADING DATA
 
+def load_starsolo(library_ids, input_path):
+  '''
+  Builds a library of AnnData objects from STARsolo output folders
+  Expects both 'Gene' and 'Velocyto' output folders
+  Loads each Velocyto/USA category into a separate layer
+  Loads unfiltered/raw counts
+
+  '''
+
+  # Create a dictionary to hold data
+  D = {}
+
+  for s in library_ids:
+
+    # store "Gene" counts as X matrix  
+    D[s] = sc.read_10x_mtx(input_path+s+'/Solo.out/Gene/raw/')
+    D[s].obs['library_id'] = np.tile(s, [D[s].n_obs, 1])
+    
+    # store Unspliced, Spliced, and Ambiguous counts matrices (USA) each in their own layer
+    D[s].layers['unspliced'] = sc.read_mtx(input_path+s+'/Solo.out/Velocyto/raw/unspliced.mtx.gz').X.transpose()
+    D[s].layers['spliced'] = sc.read_mtx(input_path+s+'/Solo.out/Velocyto/raw/spliced.mtx.gz').X.transpose()
+    D[s].layers['ambiguous'] = sc.read_mtx(input_path+s+'/Solo.out/Velocyto/raw/ambiguous.mtx.gz').X.transpose()
+
+  return D 
+
+
 def load_alevin(library_ids, input_path):
     '''
     Mirrors the functionality of load_inDrops
@@ -52,6 +78,7 @@ def load_alevin(library_ids, input_path):
         D[s].obs['unique_cell_id'] = lib_cell_bcds
 
     return D
+
 
 def load_alevinfry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     """
