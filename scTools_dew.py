@@ -463,51 +463,44 @@ def load_genedata(adata, csv_filename):
 
     return adata
 
-def load_celldata(adata, csv_filename, filter_nomatch=False):
+def load_celldata(adata, filepath, delim ='\t', filter_nomatch=False):
     '''
-    Adds annotations to the 'obs' dataframe of a ScanPy AnnData object (adata) from an imported CSV file.  
-    Uses a set of unique cell identifiers (e.g. inDrops cell barcode sequences) to match cells.  These 
-    identifiers must be present in AnnData (as adata.obs.unique_cell_id) and in the first column of the CSV file.
-    The structure of the CSV file is as follows:
-    Column 1: unique cell identifiers (exact string matches to elements of adata.obs.unique_cell_id)
+    Adds annotations to the 'obs' dataframe of an AnnData object from an imported metadata table  
+    Uses a set of unique cell identifiers (e.g. cell barcode sequences) to match cells   
+    Identifiers must be present in adata.obs_names
+    The structure of the metadata file is as follows:
+    Column 1: unique cell identifiers (exact string matches to elements of adata.obs_names)
     Column 2: first cell annotation
     Column 3: second cell annotation
       ...          ....   
     Column n: last cell annotation  
-    Column headers in the CSV file (required) will become headers of new columns in adata.obs       
-    Unique cell ids in adata that no not appear in the CSV file will be annotated as 'no match'.
-    'filter_nomatch' gives an option to filter these cells from the outputted version of adata.
+    Column headers in the metadata file (required) will become headers of new columns in adata.obs       
+    Unique cell ids in adata that no not appear in the metadata file will be annotated as 'no match'.
+    filter_nomatch gives an option to filter these cells from the outputted version of adata.
     '''
     
     # load the unique cell IDs from adata that will be matched to the csv file
-    uID_query = adata.obs.unique_cell_id
-    uID_query.replace('-','')
-    
-    # load CSV header, get the names and number of IDs
-    header = pd.read_csv(csv_filename, nrows=0)
+    header = pd.read_table(filepath, nrows=0)
     annotation_names = list(header.columns.values)[1:]  # ignore the first column header
     nAnnotations = len(annotation_names)
-    
-    # make a dictionary of unique cell IDs and annotations from the CSV file
-    loadtxt = np.loadtxt(csv_filename, dtype='str', delimiter=',', skiprows=1)
+
+    # make a dictionary of unique cell IDs and annotations from the tsv file
+    loadtxt = np.loadtxt(filepath, dtype='str', delimiter=delim, skiprows=1)
     annotation_dict = {}
     for uID, *annots in loadtxt:   # column1 = uID, all remaining columns are annotations
-        uID=uID.replace('-','')
         annotation_dict[uID] = annots
-    
+
     # lookup each query in the dictionary, return matching annotations (or NaN if no match)
     annotations = []
-    for j, uID in enumerate(uID_query):
+    for j, uID in enumerate(adata.obs_names):
         if uID in annotation_dict:
             match = annotation_dict.get(uID)
             annotations.append(match)
         else:
             annotations.append(np.repeat('no match', nAnnotations).tolist())
     
-    # convert from list of lists to array
+    # convert to array and update adata.obs
     annotations = np.array(annotations)
-
-    # now copy the matched annotations to adata
     for j in range(0, nAnnotations):
         adata.obs[annotation_names[j]] = annotations[:, j]
 
