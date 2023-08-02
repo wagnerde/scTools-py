@@ -18,18 +18,15 @@ import igraph as ig
 # LOADING DATA
 
 def load_starsolo(library_ids, input_path, use_filt=False, load_USA='True'):
+
   '''
   Builds a library of AnnData objects from STARsolo output folders
   Expects both 'Gene' and 'Velocyto' outputs
   Loads each Velocyto/USA category into a separate adata layer
-  Depending on use_filt, loads loads either 'raw' or 'filtered' counts
+  Use filt_path to specify which version of a counts matrix will be loaded
 
   '''
-  if use_filt:
-    filt_path='filtered'
-  else:
-    filt_path='raw' 
-
+  
   # Create a dictionary to hold data
   D = {}
 
