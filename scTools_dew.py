@@ -17,7 +17,7 @@ import igraph as ig
 
 # LOADING DATA
 
-def load_starsolo(library_ids, input_path, use_filt=False):
+def load_starsolo(library_ids, input_path, use_filt=False, load_USA='True'):
   '''
   Builds a library of AnnData objects from STARsolo output folders
   Expects both 'Gene' and 'Velocyto' outputs
@@ -39,10 +39,11 @@ def load_starsolo(library_ids, input_path, use_filt=False):
     D[s] = sc.read_10x_mtx(input_path+s+'/Solo.out/Gene/'+filt_path+'/')
     D[s].obs['library_id'] = np.tile(s, [D[s].n_obs, 1])
     
-    # store Unspliced, Spliced, and Ambiguous counts matrices (USA) each in their own layer
-    D[s].layers['unspliced'] = sc.read_mtx(input_path+s+'/Solo.out/Velocyto/'+filt_path+'/unspliced.mtx.gz').X.transpose()
-    D[s].layers['spliced'] = sc.read_mtx(input_path+s+'/Solo.out/Velocyto/'+filt_path+'/spliced.mtx.gz').X.transpose()
-    D[s].layers['ambiguous'] = sc.read_mtx(input_path+s+'/Solo.out/Velocyto/'+filt_path+'/ambiguous.mtx.gz').X.transpose()
+    if load_USA:
+        # store Unspliced, Spliced, and Ambiguous counts matrices (USA) each in their own layer
+        D[s].layers['unspliced'] = sc.read_mtx(input_path+s+'/Solo.out/Velocyto/'+filt_path+'/unspliced.mtx.gz').X.transpose()
+        D[s].layers['spliced'] = sc.read_mtx(input_path+s+'/Solo.out/Velocyto/'+filt_path+'/spliced.mtx.gz').X.transpose()
+        D[s].layers['ambiguous'] = sc.read_mtx(input_path+s+'/Solo.out/Velocyto/'+filt_path+'/ambiguous.mtx.gz').X.transpose()
 
   return D 
 
