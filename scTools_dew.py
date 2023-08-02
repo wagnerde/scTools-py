@@ -17,7 +17,7 @@ import igraph as ig
 
 # LOADING DATA
 
-def load_starsolo(library_ids, input_path, load_USA='True'):
+def load_starsolo(library_ids, input_path, filt_path='raw', load_USA='True'):
 
   '''
   Builds a library of AnnData objects from STARsolo output folders
