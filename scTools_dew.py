@@ -23,7 +23,7 @@ def load_starsolo(library_ids, input_path, filt_path='raw', load_USA='True'):
   Builds a library of AnnData objects from STARsolo output folders
   Expects both 'Gene' and 'Velocyto' outputs
   Loads each Velocyto/USA category into a separate adata layer
-  Use filt_path to specify which version of a counts matrix will be loaded
+  Use filt_path to specify which version of the counts matrix will be loaded (e.g. 'raw')
 
   '''
   
