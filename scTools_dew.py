@@ -32,6 +32,8 @@ def load_starsolo(library_ids, input_path, filt_path='raw', load_USA='True'):
 
   for s in library_ids:
 
+    print('Loading '+s)
+
     # store "Gene" counts as X matrix  
     D[s] = sc.read_10x_mtx(input_path+s+'/Solo.out/Gene/'+filt_path+'/')
     D[s].obs['library_id'] = np.tile(s, [D[s].n_obs, 1])
