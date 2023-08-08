@@ -501,7 +501,7 @@ def load_celldata(adata, filepath, delim ='\t', filter_NA=False):
             match = annotation_dict.get(uID)
             annotations.append(match)
         else:
-            annotations.append(np.repeat('NA', nAnnotations).tolist())
+            annotations.append(np.repeat(np.nan, nAnnotations).tolist())
     
     # convert to array and update adata.obs
     annotations = np.array(annotations)
@@ -510,7 +510,7 @@ def load_celldata(adata, filepath, delim ='\t', filter_NA=False):
 
     # if invoked, remove cells that were not present in the annotation CSV file
     if filter_NA:
-        adata = adata[adata.obs[annotation_names[j]] != 'NA', :]
+        adata = adata[adata.obs[annotation_names[j]] != np.nan, :]
 
     return adata
 
