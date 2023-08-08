@@ -467,7 +467,7 @@ def load_genedata(adata, csv_filename):
 
     return adata
 
-def load_celldata(adata, filepath, delim ='\t', filter_nomatch=False):
+def load_celldata(adata, filepath, delim ='\t', filter_NA=False):
     '''
     Adds annotations to the 'obs' dataframe of an AnnData object from an imported metadata table  
     Uses a set of unique cell identifiers (e.g. cell barcode sequences) to match cells   
@@ -480,7 +480,7 @@ def load_celldata(adata, filepath, delim ='\t', filter_nomatch=False):
     Column n: last cell annotation  
     Column headers in the metadata file (required) will become headers of new columns in adata.obs       
     Unique cell ids in adata that no not appear in the metadata file will be annotated as 'no match'.
-    filter_nomatch gives an option to filter these cells from the outputted version of adata.
+    filter_NA gives an option to filter these cells from the outputted version of adata.
     '''
     
     # load the unique cell IDs from adata that will be matched to the csv file
@@ -501,7 +501,7 @@ def load_celldata(adata, filepath, delim ='\t', filter_nomatch=False):
             match = annotation_dict.get(uID)
             annotations.append(match)
         else:
-            annotations.append(np.repeat('no match', nAnnotations).tolist())
+            annotations.append(np.repeat('NA', nAnnotations).tolist())
     
     # convert to array and update adata.obs
     annotations = np.array(annotations)
@@ -509,8 +509,8 @@ def load_celldata(adata, filepath, delim ='\t', filter_nomatch=False):
         adata.obs[annotation_names[j]] = annotations[:, j]
 
     # if invoked, remove cells that were not present in the annotation CSV file
-    if filter_nomatch:
-        adata = adata[adata.obs[annotation_names[j]] != 'no match', :]
+    if filter_NA:
+        adata = adata[adata.obs[annotation_names[j]] != 'NA', :]
 
     return adata
 
