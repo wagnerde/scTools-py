@@ -1155,13 +1155,13 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
-def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method='95', show_plots=True):
+def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method='95', show_plots=True, zero_center=True):
 
     adata_tmp = sc.AnnData(adata[:,adata.var.highly_variable].X)
 
     # Get eigenvalues from data matrix
     print('Performing PCA on data matrix')
-    sc.pp.pca(adata_tmp, n_comps=n_comps_test)
+    sc.pp.pca(adata_tmp, n_comps=n_comps_test, zero_center=zero_center)
     data = adata_tmp.uns['pca']['variance']
 
     # Get eigenvalues from randomly permuted data matrices
@@ -1178,7 +1178,7 @@ def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method=
         for c in range(mat.shape[1]):
             mat[:,c] = mat[np.random.permutation(mat.shape[0]),c]
         adata_tmp_rand.X = mat
-        sc.pp.pca(adata_tmp_rand, n_comps=n_comps_test)
+        sc.pp.pca(adata_tmp_rand, n_comps=n_comps_test, zero_center=zero_center)
         data_rand_next = adata_tmp_rand.uns['pca']['variance']
         data_rand.extend(data_rand_next.tolist())
         data_rand_max.append(np.max(data_rand_next))
