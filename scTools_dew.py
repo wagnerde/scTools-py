@@ -1155,68 +1155,74 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
+                        
 def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method='95', show_plots=True, zero_center=True):
 
+    # Subset adata to highly variable genes x cells (counts matrix only)
     adata_tmp = sc.AnnData(adata[:,adata.var.highly_variable].X)
 
-    # Get eigenvalues from data matrix
+    # Get eigenvalues from pca on data matrix
     print('Performing PCA on data matrix')
     sc.pp.pca(adata_tmp, n_comps=n_comps_test, zero_center=zero_center)
-    data = adata_tmp.uns['pca']['variance']
+    eig = adata_tmp.uns['pca']['variance']
 
-    # Get eigenvalues from randomly permuted data matrices
+    # Get eigenvalues from pca on randomly permuted data matrices
     print('Performing PCA on randomized data matrices')
-    data_rand = []
-    data_rand_max = []
+    eig_rand = np.zeros(shape=(n_iter, n_comps_test))
+    eig_rand_max = []
     nPCs_above_rand = []
     for j in range(n_iter):
-        sys.stdout.write('\rIteration %i / %i' % (j+1, n_iter)); sys.stdout.flush()
         #print('Iteration', j+1, '/', n_iter, end='\r')
+        sys.stdout.write('\rIteration %i / %i' % (j+1, n_iter)); sys.stdout.flush()
         np.random.seed(seed=j)
         adata_tmp_rand = adata_tmp.copy()
-        mat = adata_tmp_rand.X
+        mat = adata_tmp_rand.X.todense()
+        # randomly permute each row of the counts matrix
         for c in range(mat.shape[1]):
             mat[:,c] = mat[np.random.permutation(mat.shape[0]),c]
-        adata_tmp_rand.X = mat
+        adata_tmp_rand.X = scipy.sparse.csr_matrix(mat)
         sc.pp.pca(adata_tmp_rand, n_comps=n_comps_test, zero_center=zero_center)
-        data_rand_next = adata_tmp_rand.uns['pca']['variance']
-        data_rand.extend(data_rand_next.tolist())
-        data_rand_max.append(np.max(data_rand_next))
-        nPCs_above_rand.append(np.count_nonzero(data>np.max(data_rand_next)))
+        eig_rand_next = adata_tmp_rand.uns['pca']['variance']
+        eig_rand[j,:] = eig_rand_next
+        eig_rand_max.append(np.max(eig_rand_next))
+        nPCs_above_rand.append(np.count_nonzero(eig>np.max(eig_rand_next)))
 
     # Set eigenvalue thresholding method
     if threshold_method == '95':
         method_string = 'Counting the # of PCs with eigenvalues above random in >95% of trials'
-        thresh = np.percentile(data_rand_max,95)
+        eig_thresh = np.percentile(eig_rand_max,95)
     elif threshold_method == 'median':
         method_string = 'Counting the # of PCs with eigenvalues above random in >50% of trials'
-        thresh = np.percentile(data_rand_max,50)
+        eig_thresh = np.percentile(eig_rand_max,50)
     elif threshold_method == 'all':
         method_string = 'Counting the # of PCs with eigenvalues above random across all trials'
-        thresh = np.percentile(data_rand_max,100)
+        eig_thresh = np.percentile(eig_rand_max,100)
     
-    # Determine # of PCs with eigenvalues above threshold
-    n_sig_PCs = np.count_nonzero(data>thresh)    
+    # Determine # of PC dimensions with eigenvalues above threshold
+    n_sig_PCs = np.count_nonzero(eig>eig_thresh)    
 
     if show_plots: 
 
         # Plot eigenvalue histograms
-        bins = np.logspace(0, np.log10(np.max(data)+10), 50)
-        sns.histplot(data_rand, bins=bins, kde=False, alpha=1, label='random', stat='probability', color='orange')#, weights=np.zeros_like(data_rand) + 1. / len(data_rand))
-        sns.histplot(data, bins=bins, kde=False, alpha=0.5, label='data', stat='probability')#, weights=np.zeros_like(data) + 1. / len(data))
+        bins = np.logspace(0, np.log10(np.max(eig)+10), 50)
+        sns.histplot(eig_rand.flatten(), bins=bins, kde=False, alpha=1, label='random', stat='probability', color='orange')#, weights=np.zeros_like(data_rand) + 1. / len(data_rand))
+        sns.histplot(eig, bins=bins, kde=False, alpha=0.5, label='data', stat='probability')#, weights=np.zeros_like(data) + 1. / len(data))
         plt.legend(loc='upper right')
-        plt.axvline(x = thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+        plt.axvline(x = eig_thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
         plt.xscale('log')
         #plt.yscale('log')
         plt.xlabel('Eigenvalue')
         plt.ylabel('Frequency')
         plt.show()
 
-        # Plot scree
-        plt.plot(adata_tmp.uns['pca']['variance'], alpha=1, label='data')
-        plt.plot(adata_tmp_rand.uns['pca']['variance'], alpha=1, label='random')
+        # Plot scree (eigenvalues for each PC dimension)
+        plt.plot([], label='data', color='#1f77b4', alpha=1)
+        plt.plot([], label='random', color='#ff7f0e', alpha=1)
+        plt.plot(eig, alpha=1, color='#1f77b4')
+        for j in range(n_iter):
+          plt.plot(eig_rand[j], alpha=1/n_iter, color='#ff7f0e')   
         plt.legend(loc='upper right')
-        plt.axhline(y = thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
+        plt.axhline(y = eig_thresh, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
         plt.yscale('log')
         plt.xlabel('PC #')
         plt.ylabel('Eigenvalue')
@@ -1230,25 +1236,9 @@ def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method=
         plt.xlim([0, n_comps_test])
         plt.show()
 
-        # Plot cumulative histogram
-        #cumsum_data = np.cumsum(adata_tmp.uns['pca']['variance'] / sum(adata_tmp.uns['pca']['variance']))
-        #cumsum_data_random = np.cumsum(adata_tmp_rand.uns['pca']['variance'] / sum(adata_tmp_rand.uns['pca']['variance']))
-        #bin_heights = plt.plot(cumsum_data, alpha=1, label='data')
-        #bin_heights = plt.plot(cumsum_data_random, alpha=1, label='random')
-        #plt.legend(loc='upper right')
-        #plt.axhline(y = 0.99, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-        #plt.axhline(y = 0.95, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-        #plt.axhline(y = 0.9, color = 'k', linestyle = '--', alpha=0.5, linewidth=1)
-        #plt.gca().set_ylim(top=1.1)
-        #plt.xlabel('PC #')
-        #plt.ylabel('Cumulative Total Variance')
-        ##plt.legend('', frameon=False)
-        #plt.legend(loc = 'lower right')
-        #plt.show()
-
     # Print summary stats to screen
     print(method_string)
-    print('Eigenvalue Threshold =', np.round(thresh, 2))
+    print('Eigenvalue Threshold =', np.round(eig_thresh, 2))
     print('# Significant PCs =', n_sig_PCs)
 
     adata.uns['n_sig_PCs'] = n_sig_PCs
