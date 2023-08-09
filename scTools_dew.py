@@ -1155,11 +1155,16 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
-                        
+
 def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method='95', show_plots=True, zero_center=True):
 
     # Subset adata to highly variable genes x cells (counts matrix only)
     adata_tmp = sc.AnnData(adata[:,adata.var.highly_variable].X)
+
+    # Determine if the input matrix is sparse
+    sparse=False
+    if scipy.sparse.issparse(adata_tmp.X):
+      sparse=True
 
     # Get eigenvalues from pca on data matrix
     print('Performing PCA on data matrix')
@@ -1176,11 +1181,21 @@ def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method=
         sys.stdout.write('\rIteration %i / %i' % (j+1, n_iter)); sys.stdout.flush()
         np.random.seed(seed=j)
         adata_tmp_rand = adata_tmp.copy()
-        mat = adata_tmp_rand.X.todense()
+        
+        if sparse:
+          mat = adata_tmp_rand.X.todense()
+        else:
+          mat = adata_tmp_rand.X
+        
         # randomly permute each row of the counts matrix
         for c in range(mat.shape[1]):
             mat[:,c] = mat[np.random.permutation(mat.shape[0]),c]
-        adata_tmp_rand.X = scipy.sparse.csr_matrix(mat)
+        
+        if sparse:        
+          adata_tmp_rand.X = scipy.sparse.csr_matrix(mat)
+        else:
+          adata_tmp_rand.X = mat
+        
         sc.pp.pca(adata_tmp_rand, n_comps=n_comps_test, zero_center=zero_center)
         eig_rand_next = adata_tmp_rand.uns['pca']['variance']
         eig_rand[j,:] = eig_rand_next
@@ -1244,7 +1259,6 @@ def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method=
     adata.uns['n_sig_PCs'] = n_sig_PCs
 
     return adata
-
 
 
 # TRAJECTORY ANALYSIS
