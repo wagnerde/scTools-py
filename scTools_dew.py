@@ -4,6 +4,7 @@ import sys
 import scipy.sparse
 import scipy.stats
 import sklearn
+import sklearn.metrics
 import numpy as np
 import pandas as pd
 import scanpy as sc
