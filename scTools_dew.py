@@ -1034,10 +1034,15 @@ def plot_confusion_matrix(labels_A, labels_B,
     '''
     Plots a confusion matrix comparing two sets labels. 
     '''
+    
+    # Filter labels if value is missing from either set
+    nan_flag = labels_A.isnull() | labels_B.isnull()
+    labels_A = labels_A[~nan_flag]
+    labels_B = labels_B[~nan_flag]
 
     # Get all the unique values for each set of labels
-    labels_A_unique = np.unique(labels_A)
-    labels_B_unique = np.unique(labels_B)
+    labels_A_unique = np.unique(labels_A.astype('string'))
+    labels_B_unique = np.unique(labels_B.astype('string'))
 
     # Compute confusion matrix 
     cm = sklearn.metrics.confusion_matrix(labels_A, labels_B)
