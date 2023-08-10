@@ -1033,6 +1033,8 @@ def plot_confusion_matrix(labels_A, labels_B,
                           overlay_values=False,
                           vmin=None,
                           vmax=None,
+                          show_plot=True,
+                          return_df=False,
                           figsize=4):
     '''
     Plots a confusion matrix comparing two sets labels. 
@@ -1081,45 +1083,61 @@ def plot_confusion_matrix(labels_A, labels_B,
 
     # If requested, reorder the rows and columns by best match
     if reorder_columns:
-        top_match = np.argmax(cm, axis=0)
-        reorder_columns = np.argsort(top_match)
+        top_match_c = np.argmax(cm, axis=0)
+        reorder_columns = np.argsort(top_match_c)
         cm=cm[:,reorder_columns]
-        labels_A_unique = labels_A_unique[reorder_columns]
+        labels_A_unique_sorted = labels_A_unique[reorder_columns]
 
     if reorder_rows:
-        top_match = np.argmax(cm, axis=1)
-        reorder_rows = np.argsort(top_match)
+        top_match_r = np.argmax(cm, axis=1)
+        reorder_rows = np.argsort(top_match_r)
         cm=cm[reorder_rows,:]
-        labels_B_unique = labels_B_unique[reorder_rows]
+        labels_B_unique_sorted = labels_B_unique[reorder_rows]
 
-    # Generate and format figure axes
-    plt.rcParams['axes.grid'] = False
-    fig, ax = plt.subplots(figsize=(figsize,figsize))
-    im = plt.imshow(cm, interpolation='nearest', cmap=cmap, vmin=vmin, vmax=vmax)
-    ax.set_aspect('equal') 
-    ax.set_xticks(np.arange(cm.shape[1]))
-    ax.set_yticks(np.arange(cm.shape[0]))
-    ax.set_title(title)
-    ax.set_ylabel(labels_B_name)
-    ax.set_xlabel(labels_A_name)
-    ax.set_xticklabels(labels_A_unique, rotation=90, ha='center', minor=False)
-    ax.set_yticklabels(labels_B_unique)
+    # If requested, generate heatmap and format figure axes
+    if show_plot:
+        
+        plt.rcParams['axes.grid'] = False
+        fig, ax = plt.subplots(figsize=(figsize,figsize))
+        im = plt.imshow(cm, interpolation='nearest', cmap=cmap, vmin=vmin, vmax=vmax)
+        ax.set_aspect('equal') 
+        ax.set_xticks(np.arange(cm.shape[1]))
+        ax.set_yticks(np.arange(cm.shape[0]))
+        ax.set_title(title)
+        ax.set_ylabel(labels_B_name)
+        ax.set_xlabel(labels_A_name)
+        ax.set_xticklabels(labels_A_unique_sorted, rotation=90, ha='center', minor=False)
+        ax.set_yticklabels(labels_B_unique_sorted)
 
-    # Format colorbar
-    cb=ax.figure.colorbar(im, ax=ax, shrink=0.5)
-    #cb.ax.tick_params(labelsize=10) 
-    cb.ax.set_ylabel(colorbar_label, rotation=90)
+        # Format colorbar
+        cb=ax.figure.colorbar(im, ax=ax, shrink=0.5)
+        #cb.ax.tick_params(labelsize=10) 
+        cb.ax.set_ylabel(colorbar_label, rotation=90)
 
-    # If requested, loop over data dimensions and create text annotations
-    if overlay_values:
-        fmt = '.1f' if normalize else 'd'
-        thresh = cm.max() / 2.
-        for i in range(cm.shape[0]):
-            for j in range(cm.shape[1]):
-                ax.text(j, i, format(cm[i, j], fmt),
-                        ha="center", va="center",
-                        color="white" if cm[i, j] > thresh else "black",
-                        size=8)
+        # If requested, loop over data dimensions and create text annotations
+        if overlay_values:
+            fmt = '.1f' if normalize else 'd'
+            thresh = cm.max() / 2.
+            for i in range(cm.shape[0]):
+                for j in range(cm.shape[1]):
+                    ax.text(j, i, format(cm[i, j], fmt),
+                            ha="center", va="center",
+                            color="white" if cm[i, j] > thresh else "black",
+                            size=8)
+    
+    # If requested, return dataframe mapping top A for each B
+    if return_df:
+    
+        labels_A_mapped = labels_A_unique_sorted[top_match_r]
+        mapping = pd.DataFrame(data=labels_A_mapped, index=labels_B_unique, columns=['top_match'])
+        
+        # Sort the index labels, if possible
+        if np.array_equal(labels_B_unique, labels_B_unique.astype('int').astype('str')):
+          mapping.index = mapping.index.astype(int)
+          mapping = mapping.sort_index()
+        
+        return mapping
+        
     
 def plot_stacked_barplot(labels_A, 
                          labels_B, 
