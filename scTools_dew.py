@@ -417,7 +417,7 @@ def load_inDrops(library_ids, input_path):
 
     return D
 
-load_inDrops_V3 = load_inDrops # alias function name 
+load_inDrops_V3 = load_inDrops # alias to legacy function name 
 
 def load_genedata(adata, csv_filename):
     '''
@@ -1024,18 +1024,18 @@ def predict_classes(adata, Classifier):
 
 # CLUSTERING
     
-def plot_confusion_matrix(labels_A, labels_B,
-                          normalize=True,
-                          title=None,
-                          reorder_columns=True,
-                          reorder_rows=True,
-                          cmap=plt.cm.Blues,
-                          overlay_values=False,
-                          vmin=None,
-                          vmax=None,
-                          show_plot=True,
-                          return_df=False,
-                          figsize=4):
+def get_confusion_matrix(labels_A, labels_B,
+                         normalize=True,
+                         title=None,
+                         reorder_columns=True,
+                         reorder_rows=True,
+                         cmap=plt.cm.Blues,
+                         overlay_values=False,
+                         vmin=None,
+                         vmax=None,
+                         show_plot=True,
+                         return_df=False,
+                         figsize=4):
     '''
     Plots a confusion matrix comparing two sets labels. 
     '''
@@ -1125,7 +1125,7 @@ def plot_confusion_matrix(labels_A, labels_B,
                             color="white" if cm[i, j] > thresh else "black",
                             size=8)
     
-    # If requested, return dataframe mapping top A for each B
+    # If requested, return dataframe mapping top A match for each B
     if return_df:
     
         labels_A_mapped = labels_A_unique_sorted[top_match_r]
@@ -1138,7 +1138,10 @@ def plot_confusion_matrix(labels_A, labels_B,
         
         return mapping
         
+
+plot_confusion_matrix = get_confusion_matrix # alias to legacy function name 
     
+
 def plot_stacked_barplot(labels_A, 
                          labels_B, 
                          normalize='index', 
