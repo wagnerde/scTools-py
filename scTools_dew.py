@@ -47,7 +47,6 @@ def load_starsolo(library_ids, input_path, filt_path='raw', load_USA='True'):
 
   return D 
 
-
 def load_alevin(library_ids, input_path):
     '''
     Mirrors the functionality of load_inDrops
@@ -83,7 +82,6 @@ def load_alevin(library_ids, input_path):
         D[s].obs['unique_cell_id'] = lib_cell_bcds
 
     return D
-
 
 def load_alevinfry(frydir, output_format="scRNA", nonzero=False, quiet=False):
     """
@@ -703,7 +701,6 @@ def filter_scrublet(adata, filter_cells=False, threshold=5):
 
     return adata
 
-
 def get_sampling_stats(adata, groupby=''):
 
     groups = np.unique(adata.obs[groupby])
@@ -721,6 +718,18 @@ def get_sampling_stats(adata, groupby=''):
     df = pd.DataFrame(data={'UMI per Cell': lib_umi_per_cell, 'Genes per Cell': lib_genes_per_cell}, index=groups)
     return df
 
+def adata2tpt(adata):
+
+    # Perform TPT Normalization on X matrix of an adata object
+    adata_tpt = adata.copy()
+    adata_tpt.X = adata_tpt.layers['raw']
+    sc.pp.normalize_total(adata_tpt, target_sum=1e4, inplace=True) 
+    sc.pp.log1p(adata_tpt)
+
+    # Confirm TPT
+    #print(adata_tpt.X.expm1().sum(axis = 1))
+
+    return adata_tpt
 
 
 # VARIABLE GENES
@@ -928,6 +937,35 @@ def import_pajek_xy(adata, filename='test.net'):
 
 # CLASSIFICATION
 
+def split_adata(adata, train_frac=0.85):
+    """
+        Split ``adata`` into train and test annotated datasets.
+
+        Parameters
+        ----------
+        adata: :class:`~anndata.AnnData`
+            Annotated data matrix.
+        train_frac: float
+            Fraction of observations (cells) to be used in training dataset. Has to be a value between 0 and 1.
+
+        Returns
+        -------
+        train_adata: :class:`~anndata.AnnData`
+            Training annotated dataset.
+        test_adata: :class:`~anndata.AnnData`
+            Test annotated dataset.
+    """
+    train_size = int(adata.shape[0] * train_frac)
+    indices = np.arange(adata.shape[0])
+    np.random.shuffle(indices)
+    train_idx = indices[:train_size]
+    test_idx = indices[train_size:]
+
+    train_data = adata[train_idx, :]
+    test_data = adata[test_idx, :]
+
+    return train_data, test_data
+
 def train_classifiers(X, labels, PCs, gene_ind):
     '''
     Trains a series of machine learning classifiers to associate individual cells with class labels.
@@ -1087,12 +1125,16 @@ def get_confusion_matrix(labels_A, labels_B,
         reorder_columns = np.argsort(top_match_c)
         cm=cm[:,reorder_columns]
         labels_A_unique_sorted = labels_A_unique[reorder_columns]
+    else:
+        labels_A_unique_sorted = labels_A_unique
 
     if reorder_rows:
         top_match_r = np.argmax(cm, axis=1)
         reorder_rows = np.argsort(top_match_r)
         cm=cm[reorder_rows,:]
         labels_B_unique_sorted = labels_B_unique[reorder_rows]
+    else:
+        labels_B_unique_sorted = labels_B_unique
 
     # If requested, generate heatmap and format figure axes
     if show_plot:
@@ -1139,10 +1181,8 @@ def get_confusion_matrix(labels_A, labels_B,
         
         return mapping
         
-
 plot_confusion_matrix = get_confusion_matrix # alias to legacy function name 
     
-
 def plot_stacked_barplot(labels_A, 
                          labels_B, 
                          normalize='index', 
@@ -1183,7 +1223,6 @@ def pca_heatmap(adata, component, use_raw=None, layer=None):
                         swap_axes=True, cmap='viridis', 
                         use_raw=False, layer=layer, vmin=-1, vmax=3, figsize=(3,3))
                         
-
 def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method='95', show_plots=True, zero_center=True):
 
     # Subset adata to highly variable genes x cells (counts matrix only)
@@ -1287,6 +1326,7 @@ def get_significant_pcs(adata, n_iter = 3, n_comps_test = 200, threshold_method=
     adata.uns['n_sig_PCs'] = n_sig_PCs
 
     return adata
+
 
 
 # TRAJECTORY ANALYSIS
