@@ -1178,12 +1178,14 @@ def get_confusion_matrix(labels_A, labels_B,
         mapping = pd.DataFrame(data=labels_A_mapped, index=labels_B_unique, columns=['top_match'])
         
         # Sort the index labels, if possible
-        # Logic: if original labels = labels after converting to int then to string, then go ahead and sort the list
-        #if np.array_equal(labels_B_unique, labels_B_unique.astype('int').astype('str')):
-        #    mapping.index = mapping.index.astype(int)
-        #    mapping = mapping.sort_index()
+        orig_list = labels_B_unique
+        orig_list_digits = [s for s in orig_list if s.isdigit()]
+        if len(orig_list)==len(orig_list_digits):
+            mapping.index = mapping.index.astype(int)
+            mapping = mapping.sort_index()
         
         return mapping
+        
         
 plot_confusion_matrix = get_confusion_matrix # alias to legacy function name 
     
