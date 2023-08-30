@@ -1121,18 +1121,19 @@ def get_confusion_matrix(labels_A, labels_B,
 
     # If requested, reorder the rows and columns by best match
     if reorder_columns:
+        print(np.argmax(cm, axis=0))
         top_match_c = np.argmax(cm, axis=0)
-        reorder_columns = np.argsort(top_match_c)
-        cm=cm[:,reorder_columns]
-        labels_A_unique_sorted = labels_A_unique[reorder_columns]
+        reordered_columns = np.argsort(top_match_c)
+        cm=cm[:,reordered_columns]
+        labels_A_unique_sorted = labels_A_unique[reordered_columns]
     else:
         labels_A_unique_sorted = labels_A_unique
 
     if reorder_rows:
         top_match_r = np.argmax(cm, axis=1)
-        reorder_rows = np.argsort(top_match_r)
-        cm=cm[reorder_rows,:]
-        labels_B_unique_sorted = labels_B_unique[reorder_rows]
+        reordered_rows = np.argsort(top_match_r)
+        cm=cm[reordered_rows,:]
+        labels_B_unique_sorted = labels_B_unique[reordered_rows]
     else:
         labels_B_unique_sorted = labels_B_unique
 
@@ -1170,14 +1171,18 @@ def get_confusion_matrix(labels_A, labels_B,
     # If requested, return dataframe mapping top A match for each B
     if return_df:
     
-        labels_A_mapped = labels_A_unique_sorted[top_match_r]
+        if reorder_rows:
+            labels_A_mapped = labels_A_unique_sorted[top_match_r]
+        else:
+            labels_A_mapped = labels_A_unique_sorted
+
         mapping = pd.DataFrame(data=labels_A_mapped, index=labels_B_unique, columns=['top_match'])
         
         # Sort the index labels, if possible
         # Logic: if original labels = labels after converting to int then to string, then go ahead and sort the list
-        if np.array_equal(labels_B_unique, labels_B_unique.astype('int').astype('str')):
-          mapping.index = mapping.index.astype(int)
-          mapping = mapping.sort_index()
+        #if np.array_equal(labels_B_unique, labels_B_unique.astype('int').astype('str')):
+        #    mapping.index = mapping.index.astype(int)
+        #    mapping = mapping.sort_index()
         
         return mapping
         
