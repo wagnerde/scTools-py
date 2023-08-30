@@ -1121,7 +1121,6 @@ def get_confusion_matrix(labels_A, labels_B,
 
     # If requested, reorder the rows and columns by best match
     if reorder_columns:
-        print(np.argmax(cm, axis=0))
         top_match_c = np.argmax(cm, axis=0)
         reordered_columns = np.argsort(top_match_c)
         cm=cm[:,reordered_columns]
