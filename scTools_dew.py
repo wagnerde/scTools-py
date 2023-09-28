@@ -1489,6 +1489,69 @@ def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes
 
 # DIFFERENTIAL EXPRESSION
 
+from pydeseq2.dds import DeseqDataSet
+from pydeseq2.ds import DeseqStats
+import os
+
+def get_pydeseq2_sample_contrasts(adata, cluster_obs, sample_obs, condition_obs, condition_order, csv_path=None):
+
+    # Generate a pyDESeq2 results dataframe that reports cluster-level
+    # pairwise comparisons (contrasts) between conditions over samples 
+
+    # cluster_obs:      column in adata.obs containing per cell cluster assignments
+    # sample_obs:       column in adata.obs containing per cell sample assignments (e.g. 'Control_1', 'Mutant_1', etc)
+    # condition_obs:    column in adata.obs containing per cell condition assignments (e.g. 'Control', 'Mutant')
+    # condition_order:  list specifying condition order (e.g. ['Mutant', 'Control']) 
+    
+    # Use a dictionary to store results
+    pyDESeq_results = {}
+
+    # Loop over all clusters
+    clusters = list(np.unique(adata.obs[cluster_obs]))
+    for cluster in clusters:
+        print(cluster)
+        adata_subset = adata[adata.obs[cluster_obs] == cluster]
+
+        # Generate a set of pseudo-bulk profiles as adata objects - one for each sample (in each cluster)
+        pb_adata_list = []
+        for sample in np.unique(adata_subset.obs[sample_obs]):
+            adata_subset_next = adata_subset[adata_subset.obs[sample_obs] == sample]
+            del adata_subset_next.X
+            adata_subset_next.X = adata_subset_next.layers['raw_nolog'] # make sure to use raw counts data
+            pb_adata_next = sc.AnnData(X = adata_subset_next.X.sum(axis = 0), var = adata_subset_next.var[[]])
+            pb_adata_next.obs_names = [sample]
+            pb_adata_next.obs[condition_obs] = adata_subset_next.obs[condition_obs].iloc[0]
+            pb_adata_list.append(pb_adata_next)
+
+        # Concatenate the sample-level pseudo-bulk adatas
+        pb_adata = sc.concat(pb_adata_list)
+
+        # Run pyDESeq2
+        dds = DeseqDataSet(counts = pd.DataFrame(pb_adata.X, columns = pb_adata.var_names), 
+                           metadata = pb_adata.obs, 
+                           design_factors = 'condition',
+                           quiet = True)
+        dds.deseq2();
+        stat_res = DeseqStats(dds, n_cpus=8, contrast=('condition', condition_order[0], condition_order[1]));
+        stat_res.summary();
+
+        # Sort the pyDESeq2 results table
+        pyDESeq_results[cluster] = stat_res.results_df.sort_values('stat', ascending = False)
+
+    # If requested, save results tables to csv
+    if csv_path is not None:
+        # Create the directory if it doesn't exist
+        if not os.path.exists(csv_path):
+            os.makedirs(csv_path)
+        print('Saving CSV tables')
+        for cluster in clusters:
+            pyDESeq_results[cluster].to_csv(csv_path + '/' + 'pyDESeq_results_' + str(cluster) + '.csv')
+
+    # Store results in adata.uns
+    adata.uns['pyDESeq2'] = pyDESeq_results
+    return adata
+
+    
 def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
     
     # Generate a tables of differentially expressed genes for each cluster
