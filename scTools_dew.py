@@ -1498,11 +1498,11 @@ def get_pydeseq2_sample_contrasts(adata, cluster_obs, sample_obs, condition_obs,
 
     # Generate a pyDESeq2 results dataframe that reports cluster-level
     # pairwise comparisons (contrasts) between conditions over samples 
-
+    #
     # cluster_obs:      column in adata.obs containing per cell cluster assignments
     # sample_obs:       column in adata.obs containing per cell sample assignments (e.g. 'Control_1', 'Mutant_1', etc)
     # condition_obs:    column in adata.obs containing per cell condition assignments (e.g. 'Control', 'Mutant')
-    # condition_list:  list specifying condition order (e.g. ['Mutant', 'Control']) 
+    # condition_list:   list specifying condition order for comparisons (e.g. ['Mutant', 'Control']) 
     
     # Use a dictionary to store results
     pyDESeq_results = {}
@@ -1585,27 +1585,27 @@ def plot_pydeseq2_results_clustermap(adata, gene_list, cluster_obs, values_to_pl
 def plot_pydeseq2_cluster_sensitivities(adata, cluster_obs, sample_obs, condition_obs, condition_list, log2fc_threshold = 1, adj_pvalue_threshold = 0.05, return_dfs=False):
     
     # Compute normalized ratios of # cells in each cluster (total RA vs total control)
-    condition_1 = condition_list[0]
-    condition_2 = condition_list[1]
+    #
 
     # Get crosstab of cell type clusters vs conditions
     ratios_df = pd.crosstab(adata.obs[cluster_obs], adata.obs[condition_obs])
     ratios_df
 
     # Normalize condition totals to cells per 10k cells
+    condition_1 = condition_list[0]
+    condition_2 = condition_list[1]
     nCells_1 = np.sum(adata.obs[condition_obs] == condition_1)
     nCells_2 = np.sum(adata.obs[condition_obs] == condition_2)
     ratios_df[condition_1] = ratios_df[condition_1]/nCells_1*10000
     ratios_df[condition_2] = ratios_df[condition_2]/nCells_2*10000
 
-    # Get log2 ratio of normalized counts
+    # Get log2 ratio of normalized condition counts
     ratios_df['Ratio'] = np.log2(ratios_df[condition_1] / ratios_df[condition_2])
     ratios_df.sort_values(cluster_obs, ascending = True)
 
     # Get nDEGs and nCells for each cell type cluster
     degs_df = adata.uns['pyDESeq2'].copy()
     power_df = pd.DataFrame(index=adata.obs[cluster_obs].unique(), columns=['nDEGs','nCells'])
-
     for cluster in adata.obs[cluster_obs].unique():
         degs_df[cluster] = degs_df[cluster].sort_values('log2FoldChange', ascending = False)
         flag_fc = np.logical_or(degs_df[cluster]['log2FoldChange']<-log2fc_threshold, degs_df[cluster]['log2FoldChange']>log2fc_threshold)
@@ -1613,7 +1613,7 @@ def plot_pydeseq2_cluster_sensitivities(adata, cluster_obs, sample_obs, conditio
         flag = np.logical_and(flag_fc, flag_pv)
         degs_df[cluster] = degs_df[cluster][flag]
         power_df['nDEGs'][cluster] = np.log10(len(list(degs_df[cluster].index)))
-        power_df['nCells'][cluster] = (np.sum(adata.obs[cluster_obs]==cluster))
+        power_df['nCells'][cluster] = np.sum(adata.obs[cluster_obs]==cluster)
 
     # Generate scatterplot
     sns.set_style("white", {'axes.grid' : True})
