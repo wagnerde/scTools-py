@@ -1494,7 +1494,7 @@ from pydeseq2.ds import DeseqStats
 from adjustText import adjust_text
 import os
 
-def get_pydeseq2_sample_contrasts(adata, cluster_obs, sample_obs, condition_obs, condition_order, csv_path=None):
+def get_pydeseq2_sample_contrasts(adata, cluster_obs, sample_obs, condition_obs, condition_list, csv_path=None):
 
     # Generate a pyDESeq2 results dataframe that reports cluster-level
     # pairwise comparisons (contrasts) between conditions over samples 
@@ -1502,7 +1502,7 @@ def get_pydeseq2_sample_contrasts(adata, cluster_obs, sample_obs, condition_obs,
     # cluster_obs:      column in adata.obs containing per cell cluster assignments
     # sample_obs:       column in adata.obs containing per cell sample assignments (e.g. 'Control_1', 'Mutant_1', etc)
     # condition_obs:    column in adata.obs containing per cell condition assignments (e.g. 'Control', 'Mutant')
-    # condition_order:  list specifying condition order (e.g. ['Mutant', 'Control']) 
+    # condition_list:  list specifying condition order (e.g. ['Mutant', 'Control']) 
     
     # Use a dictionary to store results
     pyDESeq_results = {}
@@ -1533,7 +1533,7 @@ def get_pydeseq2_sample_contrasts(adata, cluster_obs, sample_obs, condition_obs,
                            design_factors = 'condition',
                            quiet = True)
         dds.deseq2();
-        stat_res = DeseqStats(dds, n_cpus=8, contrast=('condition', condition_order[0], condition_order[1]));
+        stat_res = DeseqStats(dds, n_cpus=8, contrast=('condition', condition_list[0], condition_list[1]));
         stat_res.summary();
 
         # Sort the pyDESeq2 results table
@@ -1582,11 +1582,11 @@ def plot_pydeseq2_results_clustermap(adata, gene_list, values_to_plot='log2FoldC
     return cg
 
 
-def plot_pydeseq2_cluster_sensitivities(adata, cluster_obs, sample_obs, condition_obs, condition_order, log2fc_threshold = 1, adj_pvalue_threshold = 0.05):
+def plot_pydeseq2_cluster_sensitivities(adata, cluster_obs, sample_obs, condition_obs, condition_list, log2fc_threshold = 1, adj_pvalue_threshold = 0.05, return_dfs=False):
     
     # Compute normalized ratios of # cells in each cluster (total RA vs total control)
-    condition_1 = condition_order[0]
-    condition_2 = condition_order[1]
+    condition_1 = condition_list[0]
+    condition_2 = condition_list[1]
 
     # Get crosstab of cell type clusters vs conditions
     ratios_df = pd.crosstab(adata.obs[cluster_obs], adata.obs[condition_obs])
@@ -1626,11 +1626,11 @@ def plot_pydeseq2_cluster_sensitivities(adata, cluster_obs, sample_obs, conditio
 
     # Format axes
     plt.xlim(-1.5, 1.5)
-    plt.xlabel('Log2 Cell Type Abundance (Condition/Control)')
+    plt.xlabel('Log2 Cell Type Abundance (' + condition_1 + ' / ' + condition_2 + ')')
     plt.ylabel('Log10 nDEGs')
 
-    return ratios_df, power_df
-
+    if return_dfs:
+        return ratios_df, power_df
 
 
 def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
