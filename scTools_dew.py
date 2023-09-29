@@ -1551,14 +1551,43 @@ def get_pydeseq2_sample_contrasts(adata, cluster_obs, sample_obs, condition_obs,
     adata.uns['pyDESeq2'] = pyDESeq_results
     return adata
 
+
+def plot_pydeseq2_results_clustermap(adata, gene_list, values_to_plot='log2FoldChange', metric='seuclidean', method='complete', cmap='vlag'):
     
+    # Generate a dataframe to hold pydeseq2 results
+    results_df = pd.DataFrame(index=gene_list, columns=adata.obs[cluster_obs].unique())
+    for cluster in adata.obs[cluster_obs].unique():
+        for g in gene_list:
+            # Go into pydeseq2 results and extract values for each gene in each cluster
+            results_df.loc[g][cluster] = adata.uns['pyDESeq2'][cluster].loc[g][values_to_plot]
+    results_df = results_df.astype(float).fillna(0)
+
+    # Generate a Seaborn clustermap
+    sns.set_style("white", {'axes.grid' : False})
+    cg = sns.clustermap(results_df.T,
+                      metric=metric, method=method,
+                      cmap=cmap, vmin=-3, vmax=3,
+                      figsize=(25,5), dendrogram_ratio=0.1, linewidths=0.5)
+                      #cbar_kws={'label': 'Log2 Fold Change \n (RA vs Control)'})
+
+    # Formatting
+    cg.ax_heatmap.axhline(y=0, color='k', linewidth=1)
+    cg.ax_heatmap.axhline(y=cg.data.shape[0], color='k', linewidth=1)
+    cg.ax_heatmap.axvline(x=0, color='k',linewidth=1)
+    cg.ax_heatmap.axvline(x=cg.data.shape[1], color='k', linewidth=1)
+    cg.fig.subplots_adjust(right=0.7)
+    cg.ax_cbar.set_position((0.8, .7, .01, .2))
+
+    return cg
+
+
 def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
     
-    # Generate a tables of differentially expressed genes for each cluster
+    # Uses results from rank_genes_groups
+    
+    # Format a table with DEG names, log2 fold changes, corrected p-values, and export to csv
     deg = adata.uns['rank_genes_groups']
     groups = deg['names'].dtype.names
-
-    # Format a table with DEG names, log2 fold changes, corrected p-values, and export to csv
     df_names_pvals = pd.DataFrame({groups+'_'+key: deg[key][groups] for groups in groups for key in ['names','logfoldchanges','pvals']}).head(ngenes_csv)
     df_names_pvals.to_csv('DEGTable.csv')
 
