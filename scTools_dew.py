@@ -1553,7 +1553,7 @@ def get_pydeseq2_sample_contrasts(adata, cluster_obs, sample_obs, condition_obs,
     return adata
 
 
-def plot_pydeseq2_results_clustermap(adata, gene_list, values_to_plot='log2FoldChange', metric='seuclidean', method='complete', cmap='vlag'):
+def plot_pydeseq2_results_clustermap(adata, gene_list, cluster_obs, values_to_plot='log2FoldChange', metric='seuclidean', method='complete', cmap='vlag'):
     
     # Generate a dataframe to hold pydeseq2 results
     results_df = pd.DataFrame(index=gene_list, columns=adata.obs[cluster_obs].unique())
