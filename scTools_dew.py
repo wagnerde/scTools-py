@@ -1491,6 +1491,7 @@ def plot_dpt_trajectory(adata, key, layer='raw', sliding_window=100, return_axes
 
 from pydeseq2.dds import DeseqDataSet
 from pydeseq2.ds import DeseqStats
+from adjustText import adjust_text
 import os
 
 def get_pydeseq2_sample_contrasts(adata, cluster_obs, sample_obs, condition_obs, condition_order, csv_path=None):
@@ -1579,6 +1580,57 @@ def plot_pydeseq2_results_clustermap(adata, gene_list, values_to_plot='log2FoldC
     cg.ax_cbar.set_position((0.8, .7, .01, .2))
 
     return cg
+
+
+def plot_pydeseq2_cluster_sensitivities(adata, cluster_obs, sample_obs, condition_obs, condition_order, log2fc_threshold = 1, adj_pvalue_threshold = 0.05):
+    
+    # Compute normalized ratios of # cells in each cluster (total RA vs total control)
+    condition_1 = condition_order[0]
+    condition_2 = condition_order[1]
+
+    # Get crosstab of cell type clusters vs conditions
+    ratios_df = pd.crosstab(adata.obs[cluster_obs], adata.obs[condition_obs])
+    ratios_df
+
+    # Normalize condition totals to cells per 10k cells
+    nCells_1 = np.sum(adata.obs[condition_obs] == condition_1)
+    nCells_2 = np.sum(adata.obs[condition_obs] == condition_2)
+    ratios_df[condition_1] = ratios_df[condition_1]/nCells_1*10000
+    ratios_df[condition_2] = ratios_df[condition_2]/nCells_2*10000
+
+    # Get log2 ratio of normalized counts
+    ratios_df['Ratio'] = np.log2(ratios_df[condition_1] / ratios_df[condition_2])
+    ratios_df.sort_values(cluster_obs, ascending = True)
+
+    # Get nDEGs and nCells for each cell type cluster
+    degs_df = adata.uns['pyDESeq2'].copy()
+    power_df = pd.DataFrame(index=adata.obs[cluster_obs].unique(), columns=['nDEGs','nCells'])
+
+    for cluster in adata.obs[cluster_obs].unique():
+        degs_df[cluster] = degs_df[cluster].sort_values('log2FoldChange', ascending = False)
+        flag_fc = np.logical_or(degs_df[cluster]['log2FoldChange']<-log2fc_threshold, degs_df[cluster]['log2FoldChange']>log2fc_threshold)
+        flag_pv = degs_df[cluster]['padj']<adj_pvalue_threshold
+        flag = np.logical_and(flag_fc, flag_pv)
+        degs_df[cluster] = degs_df[cluster][flag]
+        power_df['nDEGs'][cluster] = np.log10(len(list(degs_df[cluster].index)))
+        power_df['nCells'][cluster] = (np.sum(adata.obs[cluster_obs]==cluster))
+
+    # Generate scatterplot
+    sns.set_style("white", {'axes.grid' : True})
+    fig, ax = plt.subplots()
+    sns.scatterplot(x = list(ratios_df['Ratio']), y = list(power_df['nDEGs']), s=list(power_df['nCells']/2))
+
+    # Add and adjust point labels
+    point_labels = [plt.annotate(label, (ratios_df['Ratio'][n], power_df['nDEGs'][n])) for n, label in enumerate(power_df.index)]
+    adjust_text(point_labels, arrowprops=dict(arrowstyle="-", color='#1f77b4', lw=0.5))
+
+    # Format axes
+    plt.xlim(-1.5, 1.5)
+    plt.xlabel('Log2 Cell Type Abundance (Condition/Control)')
+    plt.ylabel('Log10 nDEGs')
+
+    return ratios_df, power_df
+
 
 
 def get_deg_table(adata, ngenes_csv=100, ngenes_disp=20):
