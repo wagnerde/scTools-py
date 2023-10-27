@@ -1867,10 +1867,10 @@ def get_observed_barcode_couplings(adata, cell_state_key, umi_thresh=1, thresh_m
   # For all state pairs, sum the number of times a cell with a given TracerSeq barcode was identified in both state j and state k
 
   # import data
-  adata = adata[~adata.obs['CellTypeName'].isin(['NaN']),:]
-  X = adata.obsm['TracerSeq']
+  adata = adata[~adata.obs[cell_state_key].isin(['NaN']),:]
   cell_states = adata.obs[cell_state_key]
-  
+  X = adata.obsm['TracerSeq']
+
   # convert TracerSeq counts matrix to boolean based on UMI threshold
   X = np.array(X >= umi_thresh)*1
   
